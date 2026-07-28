@@ -10,8 +10,16 @@ export const docsRoute = "/docs";
 export const docsImageRoute = "/og/docs";
 export const docsContentRoute = "/llms.mdx/docs";
 
+// The product repo: nav GitHub button, releases, star links.
 export const gitConfig = {
   user: "Dockroute",
   repo: "Dockroute",
+  branch: "main",
+};
+
+// This site's own repo: "edit this page" links for the docs content.
+export const siteRepo = {
+  user: "Dockroute",
+  repo: "dockroute-site",
   branch: "main",
 };
