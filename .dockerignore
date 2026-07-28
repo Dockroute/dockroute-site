@@ -1,0 +1,10 @@
+node_modules
+.next
+.source
+.git
+.github
+coverage
+Dockerfile
+docker-compose.yml
+*.md
+!README.md

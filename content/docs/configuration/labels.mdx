@@ -1,0 +1,70 @@
+---
+title: Labels
+description: The dockroute.* container labels — the whole contract between your services and your DNS.
+icon: Tags
+---
+
+Labels are how a container opts into DNS management. DockRoute reads them from
+every running container; anything without `dockroute.enabled: "true"` is
+ignored.
+
+| Label                          | Required | Default                    | Description                       |
+| ------------------------------ | -------- | -------------------------- | --------------------------------- |
+| `dockroute.enabled`            | yes      | —                          | `true` opts the container in      |
+| `dockroute.hostname`           | yes      | —                          | FQDN(s), comma-separated          |
+| `dockroute.type`               | no       | `A`                        | `A`, `AAAA` or `CNAME`            |
+| `dockroute.target`             | no       | `DOCKROUTE_DEFAULT_TARGET` | Record value (IP or CNAME target) |
+| `dockroute.ttl`                | no       | `300`                      | TTL in seconds                    |
+| `dockroute.tunnel.service`     | no       | —                          | Origin URL; publish via Cloudflare Tunnel instead of a plain record |
+| `dockroute.cloudflare.proxied` | no       | `false`                    | Proxy plain records through Cloudflare |
+
+## Plain records
+
+The minimal setup is two labels; the record target comes from
+`DOCKROUTE_DEFAULT_TARGET` when the label is omitted:
+
+```yaml
+services:
+  grafana:
+    image: grafana/grafana
+    labels:
+      dockroute.enabled: "true"
+      dockroute.hostname: "grafana.example.com"
+```
+
+Everything is overridable per container:
+
+```yaml
+    labels:
+      dockroute.enabled: "true"
+      dockroute.hostname: "grafana.example.com,metrics.example.com"
+      dockroute.type: "CNAME"
+      dockroute.target: "host.example.com"
+      dockroute.ttl: "120"
+```
+
+## Tunnel publishing
+
+`dockroute.tunnel.service` switches the container to
+[Cloudflare Tunnel publishing](/docs/guides/cloudflare-tunnel) and takes
+precedence over `dockroute.type`/`dockroute.target`:
+
+```yaml
+    labels:
+      dockroute.enabled: "true"
+      dockroute.hostname: "whoami.example.com"
+      dockroute.tunnel.service: "http://whoami:80"
+```
+
+The value is the *origin* URL — how `cloudflared` reaches the service inside
+your Docker network, usually `http://<service-name>:<port>`.
+
+## Behavior notes
+
+- **Multiple hostnames** on one container each get their own record.
+- **Duplicate hostname + record type** across containers: the first container
+  wins; the duplicate is logged and skipped. Two containers *can* share a
+  hostname with different types (one `A`, one `AAAA`), and a tunnel route
+  always takes a hostname over a plain record.
+- **Quoting matters** in Compose: write label values as strings
+  (`"true"`, not `true`) so Docker does not coerce them.

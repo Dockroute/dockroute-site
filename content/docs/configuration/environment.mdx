@@ -1,0 +1,65 @@
+---
+title: Environment variables
+description: Every environment variable DockRoute reads, with defaults.
+icon: SlidersHorizontal
+---
+
+DockRoute is configured entirely through environment variables — there is no
+config file and no database. The container is stateless and disposable.
+
+## Core
+
+| Variable                   | Default                | Description                             |
+| -------------------------- | ---------------------- | --------------------------------------- |
+| `DOCKER_SOCK`              | `/var/run/docker.sock` | Docker Engine socket path               |
+| `DOCKROUTE_PROVIDER`       | `log`                  | `log` (dry-run) or `cloudflare`         |
+| `DOCKROUTE_DEFAULT_TARGET` | —                      | Fallback record target when `dockroute.target` is omitted |
+| `DOCKROUTE_RESYNC_SECONDS` | `60`                   | Interval of the periodic full reconcile |
+
+## Ownership and policy
+
+| Variable                  | Default       | Description                                               |
+| ------------------------- | ------------- | --------------------------------------------------------- |
+| `DOCKROUTE_OWNER_ID`      | `default`     | Ownership id — lets several instances share a zone safely |
+| `DOCKROUTE_POLICY`        | `sync`        | `sync`, `upsert-only` or `create-only` — see [Sync policies](/docs/configuration/policies) |
+| `DOCKROUTE_TXT_PREFIX`    | `_dockroute-` | Ownership TXT name prefix                                 |
+| `DOCKROUTE_DOMAIN_FILTER` | —             | Comma-separated zone allowlist — entries are matched against provider **zone names**, not hostname suffixes |
+
+<Callout title="Set a distinct owner id per instance">
+  If two DockRoute instances ever share a zone with the same
+  `DOCKROUTE_OWNER_ID`, each will treat the other's records as its own. Give
+  every host a unique id (`home-lab`, `vps-1`, …) and they will coexist
+  safely — see [Multiple instances](/docs/guides/multiple-instances).
+</Callout>
+
+## Cloudflare
+
+| Variable                | Description                                                          |
+| ----------------------- | -------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`  | Token with **Zone → Zone → Read** + **Zone → DNS → Edit** (+ **Account → Cloudflare Tunnel → Edit** for tunnels) |
+| `CLOUDFLARE_ACCOUNT_ID` | Required for tunnel publishing                                        |
+| `CLOUDFLARE_TUNNEL_ID`  | Required for tunnel publishing (an existing tunnel — you run `cloudflared`) |
+
+<Callout title="Fatal at startup">
+  Two misconfigurations stop the container immediately instead of degrading
+  silently: `DOCKROUTE_PROVIDER=cloudflare` without `CLOUDFLARE_API_TOKEN`,
+  and an invalid `DOCKROUTE_POLICY` value.
+</Callout>
+
+## Example
+
+```yaml title="compose.yaml"
+services:
+  dockroute:
+    image: ghcr.io/dockroute/dockroute:latest
+    environment:
+      DOCKROUTE_PROVIDER: cloudflare
+      DOCKROUTE_OWNER_ID: home-lab
+      DOCKROUTE_POLICY: sync
+      DOCKROUTE_DOMAIN_FILTER: example.com
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    group_add:
+      - "990"
+```

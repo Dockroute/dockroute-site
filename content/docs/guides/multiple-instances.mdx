@@ -1,0 +1,71 @@
+---
+title: Multiple instances
+description: Run DockRoute on several hosts against one zone, safely, with distinct owner ids.
+icon: Network
+---
+
+Several DockRoute instances — one per Docker host, say — can share a single
+DNS zone. Safety comes from the [ownership registry](/docs/concepts/safety-model):
+every record carries its creator's `DOCKROUTE_OWNER_ID` in a companion TXT,
+and an instance only ever touches records that carry *its* id.
+
+## Setup
+
+Give each host a unique owner id:
+
+```yaml title="host A"
+  dockroute:
+    environment:
+      DOCKROUTE_OWNER_ID: home-lab
+```
+
+```yaml title="host B"
+  dockroute:
+    environment:
+      DOCKROUTE_OWNER_ID: vps-1
+```
+
+That's it. Each instance reconciles only its own containers' records; records
+owned by the other id are treated as conflicts and skipped.
+
+<Callout type="warn" title="Never reuse an owner id">
+  Two instances sharing one id will fight over each other's records — each
+  sees the other's containers as "gone" and, under `sync`, deletes their
+  records. Unique ids per instance is the rule.
+</Callout>
+
+## Same hostname on two hosts
+
+Ownership is first-come: whichever instance creates
+`app.example.com` first owns it; the other logs a conflict and skips. DNS-level
+round-robin across hosts is not supported — point the hostname at one owner.
+
+## Scoping instances to zones
+
+Combine owner ids with `DOCKROUTE_DOMAIN_FILTER` to partition responsibility:
+
+```yaml
+  dockroute:
+    environment:
+      DOCKROUTE_OWNER_ID: vps-1
+      DOCKROUTE_DOMAIN_FILTER: example.com
+```
+
+The filter is a hard allowlist — zones outside it are invisible to that
+instance, regardless of what the API token can reach.
+
+<Callout type="warn" title="The filter matches zone names, not hostnames">
+  Each entry must be a Cloudflare **zone** name (`example.com`), not an
+  arbitrary subdomain. `lab.example.com` only matches if `lab.example.com` is
+  itself a zone in your account; if it is just a subdomain inside the
+  `example.com` zone, no zone matches and the instance manages nothing.
+</Callout>
+
+## Migrating an owner id
+
+Renaming an owner id makes existing records look foreign: they carry the old
+id in their ownership TXT, so the renamed instance treats them as conflicts
+and skips them — nothing is deleted, but nothing is updated either. To
+migrate, either delete the old record + TXT pairs and let DockRoute recreate
+them under the new id, or hand-edit each TXT's `dockroute/owner=` value to
+the new id.

@@ -1,0 +1,55 @@
+---
+title: Safety model
+description: TXT-based ownership — how DockRoute proves what it manages and refuses to touch anything else.
+icon: Shield
+---
+
+The central principle:
+
+> **DockRoute never alters what it cannot prove it manages.**
+
+A DNS zone usually holds more than your containers: MX records, records you
+made by hand, records another tool manages. DockRoute's job is to converge its
+slice of the zone without ever endangering the rest.
+
+## The ownership TXT
+
+Modeled after ExternalDNS's TXT registry. Every data record DockRoute creates
+gets a companion TXT record:
+
+- **Name:** `<txt-prefix><record-type, lowercased>.<hostname>` — the A record for
+  `whoami.example.com` is tracked by `_dockroute-a.whoami.example.com`. The
+  prefix avoids CNAME-coexistence issues, and embedding the type
+  disambiguates multiple record types at the same name.
+- **Content:**
+  `heritage=dockroute,dockroute/owner=<owner-id>[,dockroute/resource=container/<id>]`
+
+A record is *owned* only when its companion TXT exists, carries
+`heritage=dockroute` and matches this instance's `DOCKROUTE_OWNER_ID`.
+
+## The rules
+
+Enforced by a provider-agnostic planner, so every provider behaves the same:
+
+| Situation | What DockRoute does |
+| --- | --- |
+| Desired record, no existing record | Create record + ownership TXT |
+| Existing record, owned, out of date | Update it |
+| Existing record, **no ownership TXT** | **Conflict** — logged and skipped; never modified, never adopted |
+| Existing record, owned by another id | Conflict — skipped; instances coexist safely |
+| Owned record, container gone | Delete — only under the `sync` policy |
+| Dangling TXT, data record deleted by hand | Recreate the record if still desired; clean up the TXT under `sync` if not |
+
+[Sync policies](/docs/configuration/policies) can restrict these actions
+further; nothing can loosen them.
+
+## What this means in practice
+
+- Pre-existing records with the same hostname as a container are **not** taken
+  over — you must delete them (or the label) yourself, deliberately.
+- Deleting the ownership TXT by hand orphans the record from DockRoute's point
+  of view: it becomes a conflict and is left alone.
+- Multiple instances with distinct owner ids can share a zone — see
+  [Multiple instances](/docs/guides/multiple-instances).
+- The same proof applies to [Cloudflare Tunnel](/docs/guides/cloudflare-tunnel)
+  ingress rules: only hostnames proven ours are ever rewritten.

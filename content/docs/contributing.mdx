@@ -1,0 +1,55 @@
+---
+title: Contributing
+description: Ground rules, development workflow, and how to add a DNS provider.
+icon: Heart
+---
+
+DockRoute is MIT licensed and built in the open. Issues and pull requests are
+welcome at [github.com/Dockroute/Dockroute](https://github.com/Dockroute/Dockroute).
+
+## Development
+
+The project runs on [Bun](https://bun.sh):
+
+```sh
+bun install
+bun test            # unit tests (in-memory fakes, no real HTTP)
+bun run typecheck   # strict TypeScript
+bun run lint        # Biome — bun run lint:fix to auto-fix
+```
+
+## Ground rules
+
+Three properties are non-negotiable, in this order:
+
+1. **Ownership safety.** Nothing may weaken the rule that unowned records are
+   never modified, deleted or adopted. The planner's conflict handling is the
+   heart of the project.
+2. **Anti-corruption layer.** Provider wire formats stay inside the provider's
+   own directory. The core deals only in DockRoute's own types.
+3. **Testing style.** Tests use in-memory fakes, not HTTP mocks — a provider
+   is tested by driving it against a fake API that enforces the real API's
+   semantics.
+
+See [CONTRIBUTING.md](https://github.com/Dockroute/Dockroute/blob/main/CONTRIBUTING.md)
+for the full version.
+
+## Adding a provider
+
+Providers implement one interface and get the ownership planner for free —
+`route53`, `rfc2136` and `pihole` are natural candidates. The rough shape:
+
+1. Implement the provider interface — it is just `name` plus
+   `sync(desiredState)`; listing current records and applying the diff are
+   your provider's internals.
+2. Map your provider's wire format at the boundary — never leak it into core
+   types.
+3. Reuse the provider-agnostic planner for ownership, policies, conflicts and
+   orphan handling; it is already tested.
+4. Register the provider with `registerProvider("<name>", factory)` and
+   import the file from `src/index.ts` — an unimported provider is never
+   registered.
+5. Add an in-memory fake of the provider API and test against it.
+
+The `cloudflare` provider is the reference implementation to crib from. Open a
+draft PR early — API-shape discussions are easier before the code hardens.

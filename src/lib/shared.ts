@@ -1,11 +1,17 @@
-export const appName = 'My App';
-export const docsRoute = '/docs';
-export const docsImageRoute = '/og/docs';
-export const docsContentRoute = '/llms.mdx/docs';
+export const appName = "DockRoute";
+export const appDescription =
+  "External-DNS for plain Docker hosts. DockRoute watches your containers, reads dockroute.* labels and keeps your DNS records — and Cloudflare Tunnel routes — in sync.";
 
-// fill this with your actual GitHub info, for example:
+// Public URL of the deployed site; override at build time for your host.
+export const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://dockroute.dev";
+
+export const docsRoute = "/docs";
+export const docsImageRoute = "/og/docs";
+export const docsContentRoute = "/llms.mdx/docs";
+
 export const gitConfig = {
-  user: 'fuma-nama',
-  repo: 'fumadocs',
-  branch: 'main',
+  user: "Dockroute",
+  repo: "Dockroute",
+  branch: "main",
 };
