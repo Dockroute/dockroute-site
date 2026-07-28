@@ -1,0 +1,78 @@
+---
+title: Cloudflare DNS
+description: Manage plain A, AAAA and CNAME records in a Cloudflare zone.
+icon: Cloud
+---
+
+The `cloudflare` provider reconciles plain DNS records against your Cloudflare
+zones, with TXT-based ownership on every record it creates.
+
+## Create the API token
+
+In the Cloudflare dashboard, create a token with:
+
+- **Zone → Zone → Read** — DockRoute lists your zones to map hostnames to
+  them.
+- **Zone → DNS → Edit** for the zones DockRoute should manage.
+
+Scope the token to only those zones. If you will also use
+[tunnel publishing](/docs/guides/cloudflare-tunnel), add
+**Account → Cloudflare Tunnel → Edit**.
+
+## Configure DockRoute
+
+```yaml title="compose.yaml"
+services:
+  dockroute:
+    image: ghcr.io/dockroute/dockroute:latest
+    environment:
+      DOCKROUTE_PROVIDER: cloudflare
+      DOCKROUTE_OWNER_ID: home-lab
+      DOCKROUTE_DOMAIN_FILTER: example.com
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    group_add:
+      - "990"
+```
+
+`DOCKROUTE_DOMAIN_FILTER` is optional but recommended: it is a hard allowlist
+of the zones DockRoute may look at, independent of what the token can reach.
+Entries are matched against **zone names** (`example.com`), not hostname
+suffixes.
+
+## Label your services
+
+```yaml
+  jellyfin:
+    image: jellyfin/jellyfin
+    labels:
+      dockroute.enabled: "true"
+      dockroute.hostname: "jellyfin.example.com"
+      dockroute.target: "203.0.113.7"
+```
+
+## Proxied records
+
+Set `dockroute.cloudflare.proxied: "true"` to serve a record through
+Cloudflare's proxy (orange cloud):
+
+```yaml
+    labels:
+      dockroute.enabled: "true"
+      dockroute.hostname: "blog.example.com"
+      dockroute.target: "203.0.113.7"
+      dockroute.cloudflare.proxied: "true"
+```
+
+Cloudflare forces TTL to `1` (auto) on proxied records; DockRoute normalizes
+both sides before diffing, so reconciles converge instead of issuing endless
+no-op updates.
+
+## What to expect in the zone
+
+For each managed hostname you will see the data record plus a companion TXT,
+e.g. `_dockroute-a.jellyfin.example.com` containing
+`heritage=dockroute,dockroute/owner=home-lab,...`. Leave those TXTs alone —
+they are DockRoute's [proof of ownership](/docs/concepts/safety-model).
+Records that already existed in the zone are never modified or adopted.

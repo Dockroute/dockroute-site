@@ -1,0 +1,62 @@
+---
+title: Architecture
+description: Watcher, label parser, reconciler, provider — how a container event becomes a DNS record.
+icon: Route
+---
+
+DockRoute is a short pipeline from the Docker socket to a DNS provider:
+
+```text
+Docker Engine API          events + list
+/var/run/docker.sock  ───────────────────▶  Watcher
+                                              │
+                                              ▼
+                                         Label Parser
+                                              │
+                                              ▼
+                                        Desired State
+                                (DNS records + tunnel routes)
+                                              │
+                                              ▼
+                                          Reconciler
+                                              │ sync
+                                              ▼
+                                        DNS Provider
+                                    (log / cloudflare / ...)
+```
+
+1. **Watcher** — connects to the Docker socket. On startup it lists all
+   running containers; afterwards it streams `/events` (container `start`,
+   `die`, `stop`, `destroy`) and triggers a reconciliation on every relevant
+   event. A periodic full re-list (`DOCKROUTE_RESYNC_SECONDS`) acts as a
+   safety net against missed events.
+2. **Label parser** — extracts `dockroute.*` labels from each container and
+   turns them into desired state: plain DNS records or tunnel routes.
+   Containers without `dockroute.enabled: "true"` are ignored.
+3. **Reconciler** — merges the desired state from *all* running containers,
+   deduplicating on hostname + record type (first container wins; a tunnel
+   route always takes a hostname over a plain record), and hands it to the
+   provider.
+4. **Provider** — one interface, many implementations. The provider owns the
+   diff: create, update, delete. `log` prints the computed desired state
+   (dry run, the default); `cloudflare` manages records and tunnel routes;
+   more are [welcome](/docs/contributing).
+
+## Design decisions
+
+- **Full-state sync, not incremental patches.** Every reconcile recomputes the
+  complete desired set from the Docker API and syncs it. Simpler and
+  self-healing — events only decide *when* to reconcile, never *what*.
+- **Provider owns the diff, planner owns the rules.** Ownership and policy
+  logic is provider-agnostic; each provider maps its wire format at its own
+  boundary and never leaks it into the core (an anti-corruption layer).
+- **No database.** Docker is the source of truth for desired state; the DNS
+  provider plus the TXT registry is the source of truth for actual state and
+  ownership. The container is stateless and disposable.
+- **Convergence over cleverness.** Provider quirks (like Cloudflare forcing
+  TTL `1` on proxied records) are normalized before diffing so reconciles
+  settle instead of looping on no-op updates.
+
+For the full details — source layout included — see
+[ARCHITECTURE.md](https://github.com/Dockroute/Dockroute/blob/main/ARCHITECTURE.md)
+in the repository.

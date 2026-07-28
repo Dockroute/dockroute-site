@@ -1,0 +1,39 @@
+---
+title: Sync policies
+description: Control how far DockRoute may go — create, update or delete — with DOCKROUTE_POLICY.
+icon: ShieldCheck
+---
+
+`DOCKROUTE_POLICY` bounds what a reconcile is allowed to do, with the same
+semantics as ExternalDNS:
+
+| Policy           | Creates | Updates owned | Deletes owned orphans |
+| ---------------- | ------- | ------------- | --------------------- |
+| `sync` (default) | ✓       | ✓             | ✓                     |
+| `upsert-only`    | ✓       | ✓             | —                     |
+| `create-only`    | ✓       | —             | —                     |
+
+Two rules hold under **every** policy:
+
+- Records DockRoute does not [own](/docs/concepts/safety-model) are never
+  touched — conflicts are logged and skipped.
+- Policies only *restrict*; they never grant extra behavior.
+
+## Choosing a policy
+
+- **`sync`** — the intended mode. Containers appear, records appear;
+  containers go away, their records go away. Use it once you trust your
+  labels.
+- **`upsert-only`** — records are created and kept current, but nothing is
+  ever deleted. Good while migrating an existing zone, or when stopped
+  containers should keep resolving.
+- **`create-only`** — records are created once and then left alone. Useful
+  when another system takes over records after creation.
+
+## Orphan cleanup
+
+An *orphan* is a record whose container is gone but whose ownership TXT proves
+it belongs to this instance. Under `sync`, orphans (and their TXTs) are removed
+on the next reconcile. A dangling ownership TXT whose data record was deleted
+by hand is also cleaned up under `sync` — or the record is recreated if its
+container is still running.

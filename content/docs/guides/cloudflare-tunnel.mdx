@@ -1,0 +1,78 @@
+---
+title: Cloudflare Tunnel
+description: Publish homelab services through an existing tunnel — no open ports, one label per service.
+icon: Waypoints
+---
+
+Tunnel publishing lets a container behind NAT go public with a single label.
+DockRoute does **not** create tunnels or move traffic — you create the tunnel
+and run `cloudflared`; DockRoute manages, via the Cloudflare API:
+
+1. the **public-hostname ingress rules** in the tunnel's remotely-managed
+   configuration, and
+2. the proxied **CNAME records** pointing each hostname at
+   `<tunnel-id>.cfargotunnel.com`.
+
+## Prerequisites
+
+- An existing Cloudflare Tunnel (remotely managed) and a running `cloudflared`
+  connector — typically a container in the same Compose stack.
+- An API token with **Zone → Zone → Read**, **Zone → DNS → Edit** and
+  **Account → Cloudflare Tunnel → Edit**.
+- Your Cloudflare account id and the tunnel id.
+
+## Configure
+
+```yaml title="compose.yaml"
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+
+  dockroute:
+    image: ghcr.io/dockroute/dockroute:latest
+    environment:
+      DOCKROUTE_PROVIDER: cloudflare
+      DOCKROUTE_OWNER_ID: home-lab
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID}
+      CLOUDFLARE_TUNNEL_ID: ${CLOUDFLARE_TUNNEL_ID}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    group_add:
+      - "990"
+
+  whoami:
+    image: traefik/whoami
+    labels:
+      dockroute.enabled: "true"
+      dockroute.hostname: "whoami.example.com"
+      dockroute.tunnel.service: "http://whoami:80"
+```
+
+`dockroute.tunnel.service` is the origin URL — how `cloudflared` reaches the
+service inside the Docker network. Tunnel mode takes precedence over plain
+`dockroute.type`/`dockroute.target` labels.
+
+## How DockRoute keeps the tunnel safe
+
+The Cloudflare tunnel-configuration endpoint replaces the *whole* ingress list
+on every write, so DockRoute is deliberately conservative:
+
+- An ingress rule is *managed* only if its hostname is proven ours through the
+  TXT registry. Everything else is preserved verbatim, in its original order,
+  ahead of managed rules — a pre-existing rule never starts being shadowed.
+- An unmanaged rule already claiming a desired hostname is a conflict: logged
+  and skipped.
+- The catch-all rule (last, no hostname) is always preserved; a fresh ingress
+  gets `http_status:404`.
+- The configuration is re-read immediately before writing and only written
+  when it actually changed.
+
+<Callout type="warn" title="One automated writer per tunnel">
+  The endpoint is last-writer-wins. DockRoute assumes it is the only automated
+  writer for the tunnels it manages — don't point another sync tool at the
+  same tunnel.
+</Callout>

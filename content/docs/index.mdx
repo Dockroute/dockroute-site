@@ -1,13 +1,67 @@
 ---
-title: Hello World
-description: Your first document
+title: Introduction
+description: External-DNS for plain Docker hosts — what DockRoute is and when to use it.
+icon: Compass
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+<img
+  src="/brand/dockroute-mascot-pip.webp"
+  alt="Pip, the DockRoute mascot — a puffin harbor pilot"
+  width="220"
+  height="220"
+/>
 
-## What is Next?
+DockRoute watches your running Docker containers, reads `dockroute.*` labels and
+reconciles the matching DNS records — and Cloudflare Tunnel routes — in a
+pluggable provider. It is the same idea as Kubernetes
+[ExternalDNS](https://github.com/kubernetes-sigs/external-dns), applied where most
+homelabs and small stacks actually live: plain Docker and Docker Compose hosts.
+
+Your Compose file is the source of truth. DockRoute makes the provider match it,
+and **never alters what it cannot prove it manages**.
+
+## What it does
+
+- Streams container lifecycle events (`start`, `die`, `stop`, `destroy`) from
+  the Docker socket and keeps a periodic full resync as a safety net.
+- Turns `dockroute.hostname` labels into `A`, `AAAA` or `CNAME` records — or
+  into Cloudflare Tunnel public hostnames with `dockroute.tunnel.service`.
+- Proves ownership of every record it creates with a companion TXT record, so
+  it can share a zone with your hand-managed records and with other DockRoute
+  instances without conflict.
+- Cleans up records when their container goes away — only under the `sync`
+  policy, and only for records it owns.
+
+## What it does not do
+
+- It does not proxy or route traffic. DockRoute manages *names*, not packets —
+  pair it with your reverse proxy or an existing Cloudflare Tunnel.
+- It does not create tunnels. You create the tunnel and run `cloudflared`;
+  DockRoute manages the tunnel's public-hostname ingress rules and CNAMEs.
+- It does not need a database. Docker is the desired state; the provider plus
+  the TXT registry is the actual state.
+
+## Where to go next
 
 <Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
+  <Card
+    title="Quickstart"
+    description="From zero to reconciled records with a dry run first."
+    href="/docs/quickstart"
+  />
+  <Card
+    title="Label reference"
+    description="Every dockroute.* label and its defaults."
+    href="/docs/configuration/labels"
+  />
+  <Card
+    title="Safety model"
+    description="How TXT ownership keeps your zone safe."
+    href="/docs/concepts/safety-model"
+  />
+  <Card
+    title="Cloudflare Tunnel"
+    description="Publish homelab services with no open ports."
+    href="/docs/guides/cloudflare-tunnel"
+  />
 </Cards>

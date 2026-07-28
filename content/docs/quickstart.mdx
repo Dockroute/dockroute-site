@@ -1,0 +1,99 @@
+---
+title: Quickstart
+description: Run DockRoute next to your services and watch it reconcile — dry run first, real records after.
+icon: Rocket
+---
+
+## 1. Dry run — no credentials needed
+
+DockRoute defaults to the `log` provider, which runs the whole pipeline and
+prints the desired state it computes instead of touching a zone. It is the
+safest way to check your labels.
+
+```yaml title="compose.yaml"
+services:
+  whoami:
+    image: traefik/whoami
+    labels:
+      dockroute.enabled: "true"
+      dockroute.hostname: "whoami.example.com"
+
+  dockroute:
+    image: ghcr.io/dockroute/dockroute:latest
+    environment:
+      DOCKROUTE_DEFAULT_TARGET: 192.168.1.10
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    group_add:
+      - "990" # the host's docker group — see note below
+```
+
+```sh
+docker compose up
+```
+
+You should see the desired state logged: an `A` record for
+`whoami.example.com` pointing at `192.168.1.10`.
+
+<Callout title="Docker socket permissions">
+  The image runs as a non-root user. Grant it the host's docker group so it can
+  read the socket — find the group id with:
+
+  ```sh
+  stat -c '%g' /var/run/docker.sock
+  ```
+
+  and put that number in `group_add`.
+</Callout>
+
+## 2. Go live with Cloudflare
+
+Switch the provider and add a token with **Zone → Zone → Read** and
+**Zone → DNS → Edit** permissions:
+
+```yaml title="compose.yaml"
+  dockroute:
+    image: ghcr.io/dockroute/dockroute:latest
+    environment:
+      DOCKROUTE_PROVIDER: cloudflare
+      DOCKROUTE_OWNER_ID: home-lab
+      DOCKROUTE_DEFAULT_TARGET: 192.168.1.10
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    group_add:
+      - "990"
+```
+
+Restart the stack. DockRoute lists your running containers, computes the
+desired records and reconciles them. From now on, every container `start` and
+`stop` triggers a reconcile, and a full resync runs every 60 seconds.
+
+## 3. Publish through a Cloudflare Tunnel (optional)
+
+If you already run `cloudflared` with a tunnel, one extra label publishes a
+service through it — no port forwarding at all:
+
+```yaml
+  whoami:
+    image: traefik/whoami
+    labels:
+      dockroute.enabled: "true"
+      dockroute.hostname: "whoami.example.com"
+      dockroute.tunnel.service: "http://whoami:80"
+```
+
+The tunnel needs two more environment variables on the DockRoute container
+(`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_TUNNEL_ID`) and the token needs
+**Account → Cloudflare Tunnel → Edit**. See the
+[Cloudflare Tunnel guide](/docs/guides/cloudflare-tunnel) for the full setup.
+
+## Verify
+
+- `docker compose logs dockroute` shows every create, update, delete and
+  skipped conflict.
+- Your zone now contains the record *and* a companion TXT like
+  `_dockroute-a.whoami.example.com` — that TXT is DockRoute's
+  [proof of ownership](/docs/concepts/safety-model).
+- Stop the `whoami` container: under the default `sync` policy both records
+  are removed on the next reconcile.
