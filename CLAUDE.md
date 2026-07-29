@@ -30,7 +30,7 @@ Documentation site built with Next.js (App Router) + Fumadocs. Content lives in 
 - `src/app/api/search/route.ts` — search endpoint
 - `src/app/og/docs/[...slug]/route.tsx` — generated OG images
 - `src/app/llms.txt` / `llms-full.txt` / `llms.mdx/docs/[[...slug]]` — LLM-facing plain-markdown exports of the docs
-- `proxy.ts` (Next proxy/middleware) rewrites `/docs/*.md` requests and `Accept: text/markdown` negotiation to the `/llms.mdx/docs/*/content.md` routes, so every doc page has a markdown representation at its own URL
+- `src/proxy.ts` (Next proxy/middleware) rewrites `/docs/*.md` requests and `Accept: text/markdown` negotiation to the `/llms.mdx/docs/*/content.md` routes, so every doc page has a markdown representation at its own URL. It MUST live under `src/` — at the project root Next silently ignores it (the build only shows `ƒ Proxy` when detected)
 
 **MDX components:** `src/components/mdx.tsx` (`getMDXComponents`) is where custom components available in MDX content are registered. Doc pages pass `createRelativeLink` so MDX files can link to each other by relative file path.
 
