@@ -18,6 +18,13 @@ export default function proxy(request: NextRequest) {
   }
 
   if (isMarkdownPreferred(request)) {
+    // the homepage's markdown representation is the llms.txt index
+    if (request.nextUrl.pathname === "/") {
+      return NextResponse.rewrite(new URL("/llms.txt", request.nextUrl), {
+        headers: { Vary: "Accept" },
+      });
+    }
+
     const result = rewriteDocs(request.nextUrl.pathname);
 
     if (result) {
