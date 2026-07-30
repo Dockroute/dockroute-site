@@ -5,7 +5,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Public URL of the site, baked into the build (metadata, OG tags).
-ARG NEXT_PUBLIC_SITE_URL=https://dockroute.dev
+ARG NEXT_PUBLIC_SITE_URL=https://www.dockroute.dev
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
 COPY package.json bun.lock ./

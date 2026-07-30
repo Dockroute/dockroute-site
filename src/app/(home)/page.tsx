@@ -1,6 +1,16 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { gitConfig } from "@/lib/shared";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    url: "/",
+  },
+};
 
 const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
 

@@ -4,7 +4,7 @@ export const appDescription =
 
 // Public URL of the deployed site; override at build time for your host.
 export const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://dockroute.dev";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.dockroute.dev";
 
 export const docsRoute = "/docs";
 export const docsImageRoute = "/og/docs";
