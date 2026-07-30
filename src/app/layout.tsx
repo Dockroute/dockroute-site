@@ -27,6 +27,9 @@ export const metadata: Metadata = {
     type: "website",
     images: "/brand/dockroute-logo.png",
   },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function Layout({ children }: LayoutProps<"/">) {

@@ -17,7 +17,7 @@ env:
   # Public URL baked into the build (metadata / OG tags). Override by setting
   # the SITE_URL repository variable (Settings → Secrets and variables →
   # Actions → Variables).
-  SITE_URL: ${{ vars.SITE_URL || 'https://dockroute.dev' }}
+  SITE_URL: ${{ vars.SITE_URL || 'https://www.dockroute.dev' }}
 
 jobs:
   verify:
