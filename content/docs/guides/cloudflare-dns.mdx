@@ -32,8 +32,6 @@ services:
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    group_add:
-      - "990"
 ```
 
 `DOCKROUTE_DOMAIN_FILTER` is optional but recommended: it is a hard allowlist

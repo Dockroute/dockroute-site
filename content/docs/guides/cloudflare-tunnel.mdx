@@ -41,8 +41,6 @@ services:
       CLOUDFLARE_TUNNEL_ID: ${CLOUDFLARE_TUNNEL_ID}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    group_add:
-      - "990"
 
   whoami:
     image: traefik/whoami

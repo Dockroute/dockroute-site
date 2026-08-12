@@ -24,8 +24,6 @@ services:
       DOCKROUTE_DEFAULT_TARGET: 192.168.1.10
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    group_add:
-      - "990" # the host's docker group — see note below
 ```
 
 ```sh
@@ -36,14 +34,11 @@ You should see the desired state logged: an `A` record for
 `whoami.example.com` pointing at `192.168.1.10`.
 
 <Callout title="Docker socket permissions">
-  The image runs as a non-root user. Grant it the host's docker group so it can
-  read the socket — find the group id with:
-
-  ```sh
-  stat -c '%g' /var/run/docker.sock
-  ```
-
-  and put that number in `group_add`.
+  Handled automatically: the entrypoint detects the socket's group, grants it
+  to the app user and drops privileges before starting — the process itself
+  runs as non-root. If you set an explicit `user:` override, add the socket's
+  group yourself with `group_add: ["<gid>"]`
+  (`stat -c '%g' /var/run/docker.sock`).
 </Callout>
 
 ## 2. Go live with Cloudflare
@@ -61,8 +56,6 @@ Switch the provider and add a token with **Zone → Zone → Read** and
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    group_add:
-      - "990"
 ```
 
 Restart the stack. DockRoute lists your running containers, computes the
