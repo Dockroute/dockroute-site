@@ -40,6 +40,7 @@ Docker Engine API          events + list
 4. **Provider** — one interface, many implementations. The provider owns the
    diff: create, update, delete. `log` prints the computed desired state
    (dry run, the default); `cloudflare` manages records and tunnel routes;
+   `pihole` manages [intranet-only local DNS](/docs/guides/pihole);
    more are [welcome](/docs/contributing).
 
 ## Design decisions

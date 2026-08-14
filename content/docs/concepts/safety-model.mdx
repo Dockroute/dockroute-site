@@ -53,3 +53,11 @@ further; nothing can loosen them.
   [Multiple instances](/docs/guides/multiple-instances).
 - The same proof applies to [Cloudflare Tunnel](/docs/guides/cloudflare-tunnel)
   ingress rules: only hostnames proven ours are ever rewritten.
+
+## The exception: providers without TXT support
+
+[Pi-hole local DNS](/docs/guides/pihole) cannot store TXT records, so
+ownership there is scoped by configuration instead of proof:
+`DOCKROUTE_DOMAIN_FILTER` is mandatory and DockRoute assumes it is the only
+writer inside the filtered domains — and never touches anything outside
+them. The guide covers what that means for manually created entries.

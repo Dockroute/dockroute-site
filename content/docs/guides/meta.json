@@ -1,4 +1,9 @@
 {
   "title": "Guides",
-  "pages": ["cloudflare-dns", "cloudflare-tunnel", "multiple-instances"]
+  "pages": [
+    "cloudflare-dns",
+    "cloudflare-tunnel",
+    "pihole",
+    "multiple-instances"
+  ]
 }
