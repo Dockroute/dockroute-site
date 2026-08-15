@@ -34,6 +34,10 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          # The build prerenders live repo stats; the shared runner IP would
+          # otherwise share the anonymous 60/hour GitHub API limit.
+          GITHUB_TOKEN: ${{ github.token }}
 
   docker:
     name: Docker build & scan

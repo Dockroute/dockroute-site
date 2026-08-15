@@ -1,6 +1,7 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import Image from "next/image";
-import { appName, gitConfig } from "./shared";
+import { GitHubStarButton } from "@/components/social/github-star-button";
+import { appName } from "./shared";
 
 export function baseOptions(): BaseLayoutProps {
   return {
@@ -23,7 +24,19 @@ export function baseOptions(): BaseLayoutProps {
         url: "/docs",
         active: "nested-url",
       },
+      {
+        text: "Changelog",
+        url: "/changelog",
+        active: "nested-url",
+      },
+      // Replaces the plain `githubUrl` icon: same destination, plus the star
+      // count. It is a server component, which is a valid ReactNode across the
+      // RSC boundary into the layout's client components.
+      {
+        type: "custom",
+        secondary: true,
+        children: <GitHubStarButton variant="nav" label="Star" />,
+      },
     ],
-    githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
   };
 }
