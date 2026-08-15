@@ -1,0 +1,64 @@
+---
+title: Community & support
+description: Where to report a bug, ask a question, send a patch, and follow releases.
+icon: Users
+---
+
+DockRoute is MIT licensed and developed in the open. Everything happens on the
+repository: there is no private support channel, no forum and no chat to join.
+
+<RepoStats className="my-8" />
+
+## Where to take what
+
+| You have | Take it to |
+| --- | --- |
+| A bug, a wrong record, a crash | [A bug report](https://github.com/Dockroute/Dockroute/issues/new/choose) |
+| A question about labels or providers | [An issue](https://github.com/Dockroute/Dockroute/issues) — questions are welcome as issues |
+| An idea for a feature or a new provider | An issue first, so the API shape can be discussed before the code |
+| A security vulnerability | [Private vulnerability reporting](https://github.com/Dockroute/Dockroute/security/policy) — never a public issue |
+
+## Filing an issue that gets fixed
+
+DockRoute reconciles state across Docker, a DNS provider and sometimes a
+tunnel, so most reports come down to *which* of the three disagreed. Include:
+
+- **The version** you are running (`docker inspect` the image tag, or the
+  release tag).
+- **The provider** and the sync policy in use — `sync`, `upsert-only` or
+  `create-only` behave very differently around deletions.
+- **The labels** on the container, verbatim. Redact the domain if you must,
+  but keep the structure.
+- **The logs** around the reconcile that went wrong. Run with the `log`
+  provider if you can reproduce it there: it prints the plan without touching
+  a zone.
+- **What you expected** in the zone versus **what you found**.
+
+An ownership question ("why did it skip my record?") is almost always answered
+by the companion TXT record. Include it if there is one — see the
+[safety model](/docs/concepts/safety-model).
+
+## Sending a pull request
+
+The [contributing guide](/docs/contributing) has the full workflow. In short:
+ownership safety is non-negotiable, provider wire formats stay inside the
+provider directory, and tests drive in-memory fakes rather than HTTP mocks.
+
+Adding a DNS provider is the most useful contribution right now — the planner,
+ownership rules and policy handling are already provider-agnostic, so a new
+provider implements one interface and inherits all of it. Open a draft PR
+early; API-shape discussions are much cheaper before the code hardens.
+
+## Following releases
+
+<ReleaseBadge className="my-4" />
+
+Releases are cut by CI on every merge to `main`, tagged `vX.Y.Z`, and published
+as multi-arch images to `ghcr.io/dockroute/dockroute`. The
+[changelog](/changelog) mirrors the release notes; watching the repository on
+GitHub will mail you each one.
+
+Pin a tag in production if you want to control upgrades — `latest` follows
+`main`'s releases.
+
+<OpenSourceActions className="my-8" />

@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { gitConfig } from "@/lib/shared";
+import { GitHubStarButton } from "@/components/social/github-star-button";
+import { LatestReleaseCard } from "@/components/social/latest-release-card";
+import { OpenSourceActions } from "@/components/social/open-source-actions";
+import { ReleaseBadge } from "@/components/social/release-badge";
+import { RepoStats } from "@/components/social/repo-stats";
 
 export const metadata: Metadata = {
   alternates: {
@@ -11,8 +15,6 @@ export const metadata: Metadata = {
     url: "/",
   },
 };
-
-const githubUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
 
 export default function HomePage() {
   return (
@@ -46,9 +48,12 @@ function Hero() {
       />
       <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-6 pt-16 pb-20 md:grid-cols-[1.1fr_1fr] md:items-center md:pt-24">
         <div>
-          <p className="font-mono text-sm font-medium tracking-wide text-teal-deep uppercase dark:text-teal">
-            External-DNS for plain Docker hosts
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p className="font-mono text-sm font-medium tracking-wide text-teal-deep uppercase dark:text-teal">
+              External-DNS for plain Docker hosts
+            </p>
+            <ReleaseBadge />
+          </div>
           <h1 className="mt-4 text-4xl font-extrabold text-balance md:text-5xl">
             DNS records that follow your containers.
           </h1>
@@ -67,12 +72,7 @@ function Hero() {
             >
               Get Started
             </Link>
-            <a
-              href={githubUrl}
-              className="rounded-lg border border-fd-border bg-fd-card px-5 py-2.5 font-semibold transition-colors hover:bg-fd-accent"
-            >
-              View on GitHub
-            </a>
+            <GitHubStarButton />
           </div>
           <p className="mt-6 font-mono text-xs text-fd-muted-foreground">
             MIT licensed · single container · Cloudflare DNS + Tunnel today,
@@ -487,37 +487,32 @@ function UseCases() {
 function OpenSource() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 py-20">
-      <div className="reveal grid gap-10 md:grid-cols-[1.2fr_1fr] md:items-center">
-        <div>
-          <p className="font-mono text-sm font-medium tracking-wide text-teal-deep uppercase dark:text-teal">
-            Open source
-          </p>
-          <h2 className="mt-3 text-3xl font-extrabold">
-            MIT licensed, built in the open.
-          </h2>
-          <p className="mt-4 text-fd-muted-foreground">
-            DockRoute borrows its safety model from Kubernetes ExternalDNS and
-            applies it where most homelabs actually live: plain Docker hosts.
-            Providers are pluggable behind one interface — Cloudflare works end
-            to end today, and the planner, ownership rules and tests are
-            provider-agnostic so new ones slot in cleanly.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              href={githubUrl}
-              className="rounded-lg border border-fd-border bg-fd-card px-5 py-2.5 font-semibold transition-colors hover:bg-fd-accent"
-            >
-              Star on GitHub
-            </a>
-            <Link
-              href="/docs/contributing"
-              className="rounded-lg px-5 py-2.5 font-semibold text-teal-deep hover:underline dark:text-teal"
-            >
-              Add a provider →
-            </Link>
-          </div>
-        </div>
-        <div className="rounded-xl border border-fd-border bg-fd-card p-6">
+      <div className="reveal max-w-2xl">
+        <p className="font-mono text-sm font-medium tracking-wide text-teal-deep uppercase dark:text-teal">
+          Open source
+        </p>
+        <h2 className="mt-3 text-3xl font-extrabold">
+          MIT licensed, built in the open.
+        </h2>
+        <p className="mt-4 text-fd-muted-foreground">
+          DockRoute borrows its safety model from Kubernetes ExternalDNS and
+          applies it where most homelabs actually live: plain Docker hosts.
+          Providers are pluggable behind one interface — Cloudflare works end to
+          end today, and the planner, ownership rules and tests are
+          provider-agnostic, so{" "}
+          <Link
+            href="/docs/contributing"
+            className="font-medium text-teal-deep hover:underline dark:text-teal"
+          >
+            a new provider
+          </Link>{" "}
+          slots in cleanly.
+        </p>
+      </div>
+      <RepoStats className="reveal mt-8" />
+      <div className="mt-5 grid gap-5 md:grid-cols-2">
+        <LatestReleaseCard className="reveal" />
+        <div className="reveal rounded-xl border border-fd-border bg-fd-card p-6">
           <p className="font-mono text-xs font-medium tracking-wide text-coral uppercase">
             Eating our own dog food
           </p>
@@ -532,6 +527,7 @@ function OpenSource() {
           </p>
         </div>
       </div>
+      <OpenSourceActions className="reveal mt-8" />
     </section>
   );
 }
@@ -554,12 +550,7 @@ function FinalCta() {
           >
             Get Started
           </Link>
-          <a
-            href={githubUrl}
-            className="rounded-lg border border-[#294d67] px-5 py-2.5 font-semibold text-offwhite transition-colors hover:bg-[#163b5c]"
-          >
-            View on GitHub
-          </a>
+          <GitHubStarButton variant="onNavy" />
         </div>
       </div>
     </section>

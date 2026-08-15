@@ -13,6 +13,13 @@ services:
     #     NEXT_PUBLIC_SITE_URL: https://dockroute.example.com
     container_name: dockroute-site
     restart: unless-stopped
+    # Optional. The site reads public repo stats and releases from the GitHub
+    # API once an hour; anonymous requests are limited to 60/hour per IP and
+    # simply degrade to "no number shown". A read-only token lifts that. Keep
+    # it a runtime variable, never a build arg, so it is not baked into the
+    # image.
+    # environment:
+    #   GITHUB_TOKEN: ${GITHUB_TOKEN}
     labels:
       dockroute.enabled: "true"
       dockroute.hostname: "dockroute.example.com"

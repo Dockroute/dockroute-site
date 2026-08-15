@@ -1,7 +1,7 @@
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import Link from "next/link";
 import { baseOptions } from "@/lib/layout.shared";
-import { appName, gitConfig } from "@/lib/shared";
+import { appName, repoLinks } from "@/lib/shared";
 
 export default function Layout({ children }: LayoutProps<"/">) {
   return (
@@ -20,21 +20,24 @@ function Footer() {
           <span className="font-semibold text-fd-foreground">{appName}</span> —
           the harbor pilot for containerized services. MIT licensed.
         </p>
-        <nav className="flex gap-5">
+        <nav className="flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/docs" className="hover:text-fd-foreground">
             Documentation
           </Link>
-          <a
-            href={`https://github.com/${gitConfig.user}/${gitConfig.repo}`}
-            className="hover:text-fd-foreground"
-          >
+          <Link href="/changelog" className="hover:text-fd-foreground">
+            Changelog
+          </Link>
+          <a href={repoLinks.home} className="hover:text-fd-foreground">
             GitHub
           </a>
-          <a
-            href={`https://github.com/${gitConfig.user}/${gitConfig.repo}/releases`}
-            className="hover:text-fd-foreground"
-          >
+          <a href={repoLinks.issues} className="hover:text-fd-foreground">
+            Issues
+          </a>
+          <a href={repoLinks.releases} className="hover:text-fd-foreground">
             Releases
+          </a>
+          <a href={repoLinks.security} className="hover:text-fd-foreground">
+            Security
           </a>
         </nav>
       </div>

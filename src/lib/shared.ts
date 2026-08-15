@@ -17,6 +17,23 @@ export const gitConfig = {
   branch: "main",
 };
 
+const repoUrl = `https://github.com/${gitConfig.user}/${gitConfig.repo}`;
+
+/** Every outbound link to the product repo, so no GitHub URL is hardcoded twice. */
+export const repoLinks = {
+  home: repoUrl,
+  stars: `${repoUrl}/stargazers`,
+  forks: `${repoUrl}/forks`,
+  fork: `${repoUrl}/fork`,
+  issues: `${repoUrl}/issues`,
+  // The repo ships issue templates, so send people to the picker.
+  newIssue: `${repoUrl}/issues/new/choose`,
+  releases: `${repoUrl}/releases`,
+  license: `${repoUrl}/blob/${gitConfig.branch}/LICENSE`,
+  contributing: `${repoUrl}/blob/${gitConfig.branch}/CONTRIBUTING.md`,
+  security: `${repoUrl}/security/policy`,
+} as const;
+
 // This site's own repo: "edit this page" links for the docs content.
 export const siteRepo = {
   user: "Dockroute",
