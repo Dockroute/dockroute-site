@@ -89,4 +89,5 @@ The tunnel needs two more environment variables on the DockRoute container
   `_dockroute-a.whoami.example.com` — that TXT is DockRoute's
   [proof of ownership](/docs/concepts/safety-model).
 - Stop the `whoami` container: under the default `sync` policy both records
-  are removed on the next reconcile.
+  are removed once it has been gone for `DOCKROUTE_DELETE_GRACE_SECONDS`
+  (60 by default), so a restart never takes the hostname down.

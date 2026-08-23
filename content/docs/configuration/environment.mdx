@@ -22,6 +22,7 @@ config file and no database. The container is stateless and disposable.
 | ------------------------- | ------------- | --------------------------------------------------------- |
 | `DOCKROUTE_OWNER_ID`      | `default`     | Ownership id — lets several instances share a zone safely |
 | `DOCKROUTE_POLICY`        | `sync`        | `sync`, `upsert-only` or `create-only` — see [Sync policies](/docs/configuration/policies) |
+| `DOCKROUTE_DELETE_GRACE_SECONDS` | `60`    | Seconds a record must stay gone before it is deleted — `0` deletes at once |
 | `DOCKROUTE_TXT_PREFIX`    | `_dockroute-` | Ownership TXT name prefix                                 |
 | `DOCKROUTE_DOMAIN_FILTER` | —             | Comma-separated zone allowlist — entries are matched against provider **zone names**, not hostname suffixes |
 
@@ -41,9 +42,12 @@ config file and no database. The container is stateless and disposable.
 | `CLOUDFLARE_TUNNEL_ID`  | Required for tunnel publishing (an existing tunnel — you run `cloudflared`) |
 
 <Callout title="Fatal at startup">
-  Two misconfigurations stop the container immediately instead of degrading
-  silently: `DOCKROUTE_PROVIDER=cloudflare` without `CLOUDFLARE_API_TOKEN`,
-  and an invalid `DOCKROUTE_POLICY` value.
+  Some misconfigurations stop the container immediately instead of degrading
+  silently: `DOCKROUTE_PROVIDER=cloudflare` without `CLOUDFLARE_API_TOKEN`, an
+  invalid `DOCKROUTE_POLICY`, and a `DOCKROUTE_RESYNC_SECONDS` or
+  `DOCKROUTE_DELETE_GRACE_SECONDS` that is not a number in range. A blank value
+  is not an error — it means "unset" and falls back to the default, so clearing
+  an optional field in Portainer or Unraid is safe.
 </Callout>
 
 ## Example

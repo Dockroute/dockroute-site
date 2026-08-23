@@ -37,11 +37,28 @@ Enforced by a provider-agnostic planner, so every provider behaves the same:
 | Existing record, owned, out of date | Update it |
 | Existing record, **no ownership TXT** | **Conflict** — logged and skipped; never modified, never adopted |
 | Existing record, owned by another id | Conflict — skipped; instances coexist safely |
-| Owned record, container gone | Delete — only under the `sync` policy |
+| Owned record, container gone | Delete — only under the `sync` policy, and only after the grace window below |
 | Dangling TXT, data record deleted by hand | Recreate the record if still desired; clean up the TXT under `sync` if not |
 
 [Sync policies](/docs/configuration/policies) can restrict these actions
 further; nothing can loosen them.
+
+### Deletions wait
+
+Creates and updates are immediate; deletions are not. A record must be
+continuously absent from the desired state for `DOCKROUTE_DELETE_GRACE_SECONDS`
+(default 60) before its deletion is executed, and one that comes back inside
+the window is never deleted at all.
+
+The asymmetry is deliberate. A create propagates in seconds and is
+self-correcting; a delete leaves a failure cached at the DNS edge and by every
+resolver that asked, long after the container is back. And a container that is
+merely restarting drops out of Docker's running set for a few seconds, looking
+exactly like one that was removed for good.
+
+A hostname that is still desired skips the window — it is being replaced, not
+removed, as when a plain A record becomes a tunnel CNAME. Set the variable to
+`0` to delete as soon as the container leaves.
 
 ## What this means in practice
 
