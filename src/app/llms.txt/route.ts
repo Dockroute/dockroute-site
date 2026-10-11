@@ -4,11 +4,10 @@ import { source } from "@/lib/source";
 
 export const revalidate = false;
 
-export function GET() {
+export async function GET() {
   // demote the generated "# Docs" heading and make links absolute, so the
   // index reads as a section of a spec-shaped llms.txt (https://llmstxt.org)
-  const index = llms(source)
-    .index()
+  const index = (await llms(source).index())
     .replace(/^# /, "## ")
     .replaceAll("](/", `](${siteUrl}/`);
 
