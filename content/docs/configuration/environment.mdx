@@ -47,7 +47,9 @@ config file and no database. The container is stateless and disposable.
   invalid `DOCKROUTE_POLICY`, and a `DOCKROUTE_RESYNC_SECONDS` or
   `DOCKROUTE_DELETE_GRACE_SECONDS` that is not a number in range. A blank value
   is not an error — it means "unset" and falls back to the default, so clearing
-  an optional field in Portainer or Unraid is safe.
+  an optional field in Portainer or Unraid is safe. The container also refuses
+  to start on an x86-64 CPU missing SSE4.2/POPCNT — see
+  [CPU requirements](/docs/quickstart#requirements).
 </Callout>
 
 ## Example
