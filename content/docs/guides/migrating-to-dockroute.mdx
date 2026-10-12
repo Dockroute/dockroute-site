@@ -22,8 +22,8 @@ Depending on what already holds the hostname, you'll see one of these:
 [cloudflare] conflict on A app.example.com: record is owned by "other-id", not "default" — skipping
 ```
 
-```text title="TXT exists, but its data record was removed by hand"
-hostname is claimed by owner "default" (dangling ownership TXT)
+```text title="a TXT from a different owner id exists, but its data record is gone"
+[cloudflare] conflict on A app.example.com: hostname is claimed by owner "other-id" (dangling ownership TXT) — skipping
 ```
 
 ```text title="tunnel: an existing ingress rule (e.g. from DockFlare) already claims the hostname"
@@ -66,15 +66,24 @@ carry real risk, so read both warnings below before using it.
 
 <Callout type="warn" title="Read before using">
   - Under the default `sync` policy, a record adopted this way **will be
-    deleted** the moment its container stops — same as any other DockRoute
-    record. Use [`upsert-only`](/docs/configuration/policies) while adopting
-    if you're not ready for that.
-  - If the TXT content doesn't match what the container's labels produce,
-    DockRoute **overwrites it** to match the labels on the next reconcile.
+    deleted** once its container is gone (after the delete grace period,
+    `DOCKROUTE_DELETE_GRACE_SECONDS`) — same as any other DockRoute record.
+    Use [`upsert-only`](/docs/configuration/policies) while adopting if
+    you're not ready for that.
+  - If the existing record's content, TTL or proxied setting differs from
+    what the container's labels produce, DockRoute **overwrites the record**
+    to match the labels on the next reconcile (unless the policy is
+    `create-only`).
 </Callout>
 
+This only applies to DNS records (A/AAAA/CNAME). A tunnel ingress hostname
+always follows the default path above — DockRoute only treats a tunnel
+hostname as its own once a CNAME for it already points at its own
+`<tunnel-id>.cfargotunnel.com`, which a TXT record alone can't establish.
+
 1. In Cloudflare, create a TXT record named `_dockroute-<type>.<hostname>`
-   (lowercased type — `_dockroute-a.app.example.com` for an `A` record)
+   (lowercased type — `_dockroute-a.app.example.com` for an `A` record;
+   replace `_dockroute-` with your `DOCKROUTE_TXT_PREFIX` if you set one)
    with content `heritage=dockroute,dockroute/owner=default` (replace
    `default` with your `DOCKROUTE_OWNER_ID` if you set one).
 2. Deploy the container with its DockRoute labels. The existing record now
