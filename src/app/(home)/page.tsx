@@ -20,6 +20,7 @@ export default function HomePage() {
   return (
     <main className="flex-1">
       <Hero />
+      <BeforeAfter />
       <RouteStory />
       <HowItWorks />
       <SafetyModel />
@@ -147,6 +148,88 @@ function Y({ k, v }: { k: string; v?: string }) {
       <span className="text-fd-muted-foreground">:</span>
       {v ? <span className="text-fd-foreground"> {v}</span> : null}
     </>
+  );
+}
+
+const painPoints = [
+  "Open the DNS dashboard and add a CNAME by hand.",
+  "Look up the tunnel, load balancer or IP to point it at.",
+  "Write a script — or remember — to update it when the container moves.",
+  "Forget to remove it when the container is gone. The stale record stays.",
+];
+
+function BeforeAfter() {
+  return (
+    <section className="mx-auto w-full max-w-6xl px-6 py-20">
+      <div className="reveal max-w-2xl">
+        <p className="font-mono text-sm font-medium tracking-wide text-teal-deep uppercase dark:text-teal">
+          Why DockRoute
+        </p>
+        <h2 className="mt-3 text-3xl font-extrabold text-balance">
+          Stop clicking. Start labeling.
+        </h2>
+      </div>
+      <div className="mt-10 grid gap-5 md:grid-cols-2">
+        <article className="reveal rounded-xl border border-fd-border bg-fd-card p-6">
+          <span className="rounded-full bg-fd-muted px-2.5 py-1 font-mono text-[11px] font-medium text-fd-muted-foreground uppercase">
+            Without DockRoute
+          </span>
+          <ol className="mt-4 space-y-3">
+            {painPoints.map((point, i) => (
+              <li
+                key={point}
+                className="flex gap-3 text-sm leading-relaxed text-fd-muted-foreground"
+              >
+                <span className="font-mono text-xs font-semibold text-fd-muted-foreground">
+                  {i + 1}.
+                </span>
+                <span>{point}</span>
+              </li>
+            ))}
+          </ol>
+        </article>
+        <article className="reveal overflow-hidden rounded-xl border border-fd-border bg-fd-card">
+          <div className="border-b border-fd-border px-6 py-3">
+            <span className="rounded-full bg-teal/10 px-2.5 py-1 font-mono text-[11px] font-medium text-teal-deep uppercase dark:text-teal">
+              With DockRoute
+            </span>
+          </div>
+          <div className="p-6">
+            <pre className="overflow-x-auto font-mono text-[13px] leading-relaxed">
+              <code>
+                <Y k="labels" />
+                {"\n  "}
+                <Y k="dockroute.enabled" v='"true"' />
+                {"\n  "}
+                <Y k="dockroute.hostname" v='"whoami.example.com"' />
+                {"\n  "}
+                <Y k="dockroute.tunnel.service" v='"http://whoami:80"' />
+              </code>
+            </pre>
+            <p className="mt-4 text-sm leading-relaxed text-fd-muted-foreground">
+              A few labels. DockRoute creates the record, keeps it in sync while
+              the container runs, and removes it when the container is gone
+              (with the default <code>sync</code> policy).
+            </p>
+          </div>
+        </article>
+      </div>
+      <p className="reveal mt-6 max-w-2xl text-sm text-fd-muted-foreground">
+        <strong className="font-semibold text-fd-foreground">
+          What DockRoute never touches:
+        </strong>{" "}
+        any record it can't prove it owns. Without its own TXT ownership record,
+        a record made by hand, by another tool, or by a DockRoute instance with
+        a different owner ID is left alone — see the{" "}
+        <Link
+          href="#safety-model"
+          className="font-medium text-teal-deep hover:underline dark:text-teal"
+        >
+          full safety model
+        </Link>{" "}
+        below.
+      </p>
+    </section>
   );
 }
 
@@ -350,7 +433,10 @@ const safetyRules = [
 
 function SafetyModel() {
   return (
-    <section className="border-y border-fd-border bg-fd-card/50">
+    <section
+      id="safety-model"
+      className="scroll-mt-20 border-y border-fd-border bg-fd-card/50"
+    >
       <div className="mx-auto w-full max-w-6xl px-6 py-20">
         <div className="reveal max-w-2xl">
           <p className="font-mono text-sm font-medium tracking-wide text-teal-deep uppercase dark:text-teal">
