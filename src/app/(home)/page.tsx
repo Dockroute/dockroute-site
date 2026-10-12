@@ -199,12 +199,17 @@ function BeforeAfter() {
               <code>
                 <Y k="labels" />
                 {"\n  "}
+                <Y k="dockroute.enabled" v='"true"' />
+                {"\n  "}
                 <Y k="dockroute.hostname" v='"whoami.example.com"' />
+                {"\n  "}
+                <Y k="dockroute.tunnel.service" v='"http://whoami:80"' />
               </code>
             </pre>
             <p className="mt-4 text-sm leading-relaxed text-fd-muted-foreground">
-              One label. DockRoute creates the record, keeps it in sync while
-              the container runs, and removes it when the container is gone.
+              A few labels. DockRoute creates the record, keeps it in sync while
+              the container runs, and removes it when the container is gone
+              (with the default <code>sync</code> policy).
             </p>
           </div>
         </article>
@@ -213,9 +218,9 @@ function BeforeAfter() {
         <strong className="font-semibold text-fd-foreground">
           What DockRoute never touches:
         </strong>{" "}
-        only records carrying its own TXT ownership proof. A record made by
-        hand, by another tool, or by another DockRoute instance is left alone —
-        see the{" "}
+        any record it can't prove it owns. Without its own TXT ownership record,
+        a record made by hand, by another tool, or by a DockRoute instance with
+        a different owner ID is left alone — see the{" "}
         <Link
           href="#safety-model"
           className="font-medium text-teal-deep hover:underline dark:text-teal"
