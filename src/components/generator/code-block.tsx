@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Download } from "lucide-react";
+import { Check, Copy, Download, X } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 
@@ -14,11 +14,19 @@ export function CodeBlock({
   content: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
 
   const copy = async () => {
-    await navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopyFailed(false);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+      setCopyFailed(true);
+      setTimeout(() => setCopyFailed(false), 1500);
+    }
   };
 
   const download = () => {
@@ -28,7 +36,7 @@ export function CodeBlock({
     a.href = url;
     a.download = filename;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   return (
@@ -47,10 +55,12 @@ export function CodeBlock({
           >
             {copied ? (
               <Check aria-hidden className="size-3.5" />
+            ) : copyFailed ? (
+              <X aria-hidden className="size-3.5" />
             ) : (
               <Copy aria-hidden className="size-3.5" />
             )}
-            {copied ? "Copied" : "Copy"}
+            {copied ? "Copied" : copyFailed ? "Failed" : "Copy"}
           </button>
           <button
             type="button"

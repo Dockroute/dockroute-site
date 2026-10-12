@@ -1,14 +1,12 @@
-/// <reference types="bun-types" />
 import { describe, expect, test } from "bun:test";
 import {
   isIPv4,
   isIPv6,
   isValidTarget,
   isValidTunnelServiceUrl,
-  validatePolicy,
+  validateHostname,
   validateSeconds,
   validateTarget,
-  validateTtl,
   validateTunnelService,
 } from "./validate";
 
@@ -50,9 +48,29 @@ describe("isIPv6", () => {
     expect(isIPv6("::1")).toBe(true);
   });
 
+  test("accepts addresses the URL parser normalizes to a different form", () => {
+    expect(isIPv6("2001:0db8::1")).toBe(true);
+    expect(isIPv6("2001:db8:0:0:0:0:0:1")).toBe(true);
+    expect(isIPv6("::ffff:1.2.3.4")).toBe(true);
+  });
+
   test("rejects IPv4 addresses and hostnames", () => {
     expect(isIPv6("192.0.2.1")).toBe(false);
     expect(isIPv6("origin.example.com")).toBe(false);
+  });
+});
+
+describe("isValidTarget with URL-normalized IPv6 forms", () => {
+  test("accepts them for AAAA", () => {
+    expect(isValidTarget("AAAA", "2001:0db8::1")).toBe(true);
+    expect(isValidTarget("AAAA", "2001:db8:0:0:0:0:0:1")).toBe(true);
+    expect(isValidTarget("AAAA", "::ffff:1.2.3.4")).toBe(true);
+  });
+
+  test("rejects them for CNAME", () => {
+    expect(isValidTarget("CNAME", "2001:0db8::1")).toBe(false);
+    expect(isValidTarget("CNAME", "2001:db8:0:0:0:0:0:1")).toBe(false);
+    expect(isValidTarget("CNAME", "::ffff:1.2.3.4")).toBe(false);
   });
 });
 
@@ -67,21 +85,14 @@ describe("validateTarget", () => {
   });
 });
 
-// Mirrors core's "warns and uses the default when an explicit ttl is
-// invalid" — a blank value is not an error, it falls back to the default.
-describe("validateTtl", () => {
-  test("blank is valid (falls back to the default)", () => {
-    expect(validateTtl("")).toBeUndefined();
+describe("validateHostname", () => {
+  test("requires a non-blank hostname", () => {
+    expect(validateHostname("")).toBeDefined();
+    expect(validateHostname("   ")).toBeDefined();
   });
 
-  test("rejects a non-numeric or non-positive ttl", () => {
-    expect(validateTtl("5m")).toBeDefined();
-    expect(validateTtl("0")).toBeDefined();
-    expect(validateTtl("-1")).toBeDefined();
-  });
-
-  test("accepts a positive number", () => {
-    expect(validateTtl("60")).toBeUndefined();
+  test("passes a non-blank hostname", () => {
+    expect(validateHostname("whoami.example.com")).toBeUndefined();
   });
 });
 
@@ -99,18 +110,6 @@ describe("validateSeconds", () => {
 
   test("rejects non-numeric values", () => {
     expect(validateSeconds("soon", 0)).toBeDefined();
-  });
-});
-
-describe("validatePolicy", () => {
-  test("accepts the three core policies", () => {
-    expect(validatePolicy("sync")).toBeUndefined();
-    expect(validatePolicy("upsert-only")).toBeUndefined();
-    expect(validatePolicy("create-only")).toBeUndefined();
-  });
-
-  test("rejects anything else", () => {
-    expect(validatePolicy("whatever")).toBeDefined();
   });
 });
 

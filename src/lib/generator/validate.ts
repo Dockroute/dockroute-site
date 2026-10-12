@@ -20,10 +20,16 @@ export function isIPv4(value: string): boolean {
 }
 
 /** No IPv6 parser in the browser, so this borrows the URL parser's bracketed
- * host syntax: only a valid IPv6 literal parses between `[` and `]`. */
+ * host syntax: only a valid IPv6 literal parses between `[` and `]`. Checking
+ * parse success (not comparing against the normalized hostname) matters
+ * because the URL parser compresses/reformats the address — `2001:0db8::1`
+ * and `2001:db8:0:0:0:0:0:1` both parse to `[2001:db8::1]`, so comparing
+ * against the original text would reject valid, differently-written
+ * addresses that core accepts. */
 export function isIPv6(value: string): boolean {
   try {
-    return new URL(`http://[${value}]`).hostname === `[${value.toLowerCase()}]`;
+    new URL(`http://[${value}]`);
+    return true;
   } catch {
     return false;
   }
@@ -70,29 +76,12 @@ export function validateHostname(hostname: string): string | undefined {
   return undefined;
 }
 
-/** Mirrors core's ttl fallback in src/core/labels.ts (blank is not an error). */
-export function validateTtl(raw: string): string | undefined {
-  if (!raw.trim()) return undefined;
-  const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) {
-    return "Must be a number of seconds greater than 0 (blank uses the default of 300).";
-  }
-  return undefined;
-}
-
 /** Mirrors core's secondsFromEnv in src/config.ts — blank means "unset". */
 export function validateSeconds(raw: string, min: number): string | undefined {
   if (!raw.trim()) return undefined;
   const value = Number(raw);
   if (!Number.isFinite(value) || value < min) {
     return `Must be a number of seconds >= ${min} (blank uses the default).`;
-  }
-  return undefined;
-}
-
-export function validatePolicy(policy: string): string | undefined {
-  if (!POLICIES.includes(policy as Policy)) {
-    return `Must be one of: ${POLICIES.join(", ")}.`;
   }
   return undefined;
 }
@@ -114,11 +103,4 @@ export function validateTunnelService(value: string): string | undefined {
     return `Must start with one of: ${TUNNEL_SERVICE_SCHEMES.map((s) => `${s}//`).join(", ")}.`;
   }
   return undefined;
-}
-
-export function validateRequired(
-  value: string,
-  label: string,
-): string | undefined {
-  return value.trim() ? undefined : `${label} is required.`;
 }

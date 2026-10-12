@@ -13,6 +13,16 @@ function envRef(name: string): string {
   return `$\{${name}}`;
 }
 
+/** Renders a user-supplied value as a safe YAML double-quoted scalar.
+ * `$` is doubled first so compose's own interpolation treats it as a
+ * literal `$` instead of (or alongside) a `${VAR}`/`$VAR` reference —
+ * otherwise a value like `a$b` silently loses the `$b` with a compose
+ * warning, and a value with `#`, `:` or a leading special char can break
+ * the YAML or get truncated as a comment. */
+function yamlString(value: string): string {
+  return JSON.stringify(value.replaceAll("$", "$$$$"));
+}
+
 /**
  * Builds a ready-to-use compose.yaml + .env for DockRoute from the wizard
  * state. Every key here maps to an env var or label Dockroute/Dockroute's
@@ -26,24 +36,32 @@ export function generateFiles(state: WizardState): GeneratedFiles {
 
 function generateCompose(state: WizardState): string {
   const lines: string[] = ["services:", "  dockroute:"];
-  lines.push(`    image: ${state.image}`);
+  lines.push(`    image: ${yamlString(state.image)}`);
   lines.push("    container_name: dockroute");
   lines.push("    restart: unless-stopped");
   lines.push("    environment:");
   lines.push(`      DOCKROUTE_PROVIDER: ${state.provider}`);
-  lines.push(`      DOCKROUTE_OWNER_ID: ${state.ownerId.trim() || "default"}`);
+  lines.push(
+    `      DOCKROUTE_OWNER_ID: ${yamlString(state.ownerId.trim() || "default")}`,
+  );
   lines.push(`      DOCKROUTE_POLICY: ${state.policy}`);
   lines.push(
-    `      DOCKROUTE_DELETE_GRACE_SECONDS: "${state.deleteGraceSeconds.trim() || "60"}"`,
+    `      DOCKROUTE_DELETE_GRACE_SECONDS: ${yamlString(state.deleteGraceSeconds.trim() || "60")}`,
   );
   if (state.txtPrefix.trim() && state.txtPrefix.trim() !== "_dockroute-") {
-    lines.push(`      DOCKROUTE_TXT_PREFIX: ${state.txtPrefix.trim()}`);
+    lines.push(
+      `      DOCKROUTE_TXT_PREFIX: ${yamlString(state.txtPrefix.trim())}`,
+    );
   }
   if (state.defaultTarget.trim()) {
-    lines.push(`      DOCKROUTE_DEFAULT_TARGET: ${state.defaultTarget.trim()}`);
+    lines.push(
+      `      DOCKROUTE_DEFAULT_TARGET: ${yamlString(state.defaultTarget.trim())}`,
+    );
   }
   if (state.domainFilter.trim()) {
-    lines.push(`      DOCKROUTE_DOMAIN_FILTER: ${state.domainFilter.trim()}`);
+    lines.push(
+      `      DOCKROUTE_DOMAIN_FILTER: ${yamlString(state.domainFilter.trim())}`,
+    );
   }
   if (state.provider === "cloudflare") {
     lines.push(`      CLOUDFLARE_API_TOKEN: ${envRef("CLOUDFLARE_API_TOKEN")}`);
@@ -82,17 +100,21 @@ function generateCompose(state: WizardState): string {
     lines.push("    restart: unless-stopped");
     lines.push("    labels:");
     lines.push('      dockroute.enabled: "true"');
-    lines.push(`      dockroute.hostname: ${state.exampleHostname.trim()}`);
+    lines.push(
+      `      dockroute.hostname: ${yamlString(state.exampleHostname.trim())}`,
+    );
     if (state.tunnelEnabled) {
       lines.push(
-        `      dockroute.tunnel.service: "${state.exampleTunnelService.trim()}"`,
+        `      dockroute.tunnel.service: ${yamlString(state.exampleTunnelService.trim())}`,
       );
     } else {
       if (state.exampleRecordType !== "A") {
         lines.push(`      dockroute.type: ${state.exampleRecordType}`);
       }
       if (state.exampleTarget.trim()) {
-        lines.push(`      dockroute.target: ${state.exampleTarget.trim()}`);
+        lines.push(
+          `      dockroute.target: ${yamlString(state.exampleTarget.trim())}`,
+        );
       }
     }
   }
@@ -109,7 +131,7 @@ function generateEnv(state: WizardState): string {
   if (state.provider === "cloudflare") {
     lines.push("");
     lines.push(
-      "# Zone -> DNS -> Edit (+ Account -> Cloudflare Tunnel -> Edit for tunnels)",
+      "# Zone -> Zone -> Read, Zone -> DNS -> Edit (+ Account -> Cloudflare Tunnel -> Edit for tunnels)",
     );
     lines.push(`CLOUDFLARE_API_TOKEN=${CHANGE_ME}`);
   }

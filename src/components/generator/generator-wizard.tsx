@@ -5,8 +5,10 @@ import { cn } from "@/lib/cn";
 import { generateFiles } from "@/lib/generator/compose";
 import { DEFAULT_STATE, type WizardState } from "@/lib/generator/state";
 import {
+  isValidTarget,
   POLICIES,
   RECORD_TYPES,
+  validateHostname,
   validateSeconds,
   validateTarget,
   validateTunnelService,
@@ -41,7 +43,7 @@ export function GeneratorWizard() {
         {step === "provider" && <ProviderStep state={state} patch={patch} />}
         {step === "tunnel" && <TunnelStep state={state} patch={patch} />}
         {step === "example" && <ExampleStep state={state} patch={patch} />}
-        {step === "review" && <ReviewStep files={files} />}
+        {step === "review" && <ReviewStep state={state} files={files} />}
         <StepNav step={step} onStep={setStep} />
       </div>
       <Summary state={state} />
@@ -318,6 +320,7 @@ function ExampleStep({
             label="Hostname"
             value={state.exampleHostname}
             onChange={(exampleHostname) => patch({ exampleHostname })}
+            error={validateHostname(state.exampleHostname)}
             monospace
           />
           {tunnelMode ? (
@@ -365,7 +368,28 @@ function ExampleStep({
   );
 }
 
-function ReviewStep({ files }: { files: { compose: string; env: string } }) {
+function exampleTargetWarning(state: WizardState): string | undefined {
+  if (!state.exampleAppEnabled) return undefined;
+  const tunnelMode = state.provider === "cloudflare" && state.tunnelEnabled;
+  if (tunnelMode) return undefined;
+  const effectiveTarget =
+    state.exampleTarget.trim() || state.defaultTarget.trim();
+  if (
+    effectiveTarget &&
+    isValidTarget(state.exampleRecordType, effectiveTarget)
+  )
+    return undefined;
+  return `The example app has no valid ${state.exampleRecordType} target (target and default target are both empty, or the default target doesn't match ${state.exampleRecordType}) — DockRoute will silently skip it without creating a record. Go back to the Example app step and fix the target.`;
+}
+
+function ReviewStep({
+  state,
+  files,
+}: {
+  state: WizardState;
+  files: { compose: string; env: string };
+}) {
+  const warning = exampleTargetWarning(state);
   return (
     <Panel title="Review">
       <p className="text-sm text-fd-muted-foreground">
@@ -373,6 +397,11 @@ function ReviewStep({ files }: { files: { compose: string; env: string } }) {
         anywhere. Secrets are <code>CHANGE_ME</code> placeholders; fill them in
         before <code>docker compose up</code>.
       </p>
+      {warning ? (
+        <p className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
+          {warning}
+        </p>
+      ) : null}
       <CodeBlock
         title="compose.yaml"
         filename="compose.yaml"
