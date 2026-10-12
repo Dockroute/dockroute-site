@@ -1,0 +1,95 @@
+---
+title: Migrating an existing record
+description: Hand a hostname already managed by hand, by DockFlare, or by another tool over to DockRoute.
+icon: ArrowRightLeft
+---
+
+DockRoute never adopts a record it cannot prove it owns — see the
+[safety model](/docs/concepts/safety-model). So the first time you label a
+container whose hostname already resolves to something else, nothing breaks
+and nothing updates: DockRoute logs a conflict and leaves the existing record
+alone.
+
+## Recognize the conflict in your logs
+
+Depending on what already holds the hostname, you'll see one of these:
+
+```text title="no ownership TXT at all (manual record, DockFlare, anything else)"
+[cloudflare] conflict on A app.example.com: record exists but has no ownership TXT — not managed by dockroute — skipping
+```
+
+```text title="TXT exists but belongs to a different owner id"
+[cloudflare] conflict on A app.example.com: record is owned by "other-id", not "default" — skipping
+```
+
+```text title="a TXT from a different owner id exists, but its data record is gone"
+[cloudflare] conflict on A app.example.com: hostname is claimed by owner "other-id" (dangling ownership TXT) — skipping
+```
+
+```text title="tunnel: an existing ingress rule (e.g. from DockFlare) already claims the hostname"
+[cloudflare] tunnel route app.example.com: an unmanaged ingress rule claims this hostname — skipping
+```
+
+None of these touch the existing record or ingress rule. DockRoute keeps
+retrying on every reconcile, so once the conflict is resolved it picks the
+hostname up on its own.
+
+## Default path: delete, then let DockRoute recreate it
+
+This is the recommended way to migrate — a clean handover, at the cost of a
+few seconds without resolution.
+
+1. **Deploy DockRoute with the container's labels already in place.** It logs
+   the conflict above and changes nothing — safe to do first.
+2. **Stop whatever currently manages the hostname** for that container —
+   disable DockFlare for it, or stop writing to the record by hand. If you
+   skip this, the old tool recreates what you just deleted.
+3. **Delete the existing record in the Cloudflare dashboard.** For a tunnel
+   hostname, also delete the old ingress rule for it.
+4. **Wait for the next reconcile.** It runs immediately on the next container
+   event, or at most `DOCKROUTE_RESYNC_SECONDS` later (default 60). DockRoute
+   creates the record (or ingress rule) and its ownership TXT.
+
+<Callout type="info" title="A few seconds of downtime">
+  The hostname won't resolve between step 3 and the next reconcile — at most
+  `DOCKROUTE_RESYNC_SECONDS`, often less since container start/stop events
+  trigger an immediate reconcile. Plan the cutover for a quiet moment if that
+  gap matters.
+</Callout>
+
+## Advanced: zero-downtime adoption
+
+You can skip the gap by creating the ownership TXT yourself, before deleting
+anything. The domain owner asserting "DockRoute manages this" is exactly what
+the TXT proves, so this doesn't weaken the ownership check — but it does
+carry real risk, so read both warnings below before using it.
+
+<Callout type="warn" title="Read before using">
+  - Under the default `sync` policy, a record adopted this way **will be
+    deleted** once its container is gone (after the delete grace period,
+    `DOCKROUTE_DELETE_GRACE_SECONDS`) — same as any other DockRoute record.
+    Use [`upsert-only`](/docs/configuration/policies) while adopting if
+    you're not ready for that.
+  - If the existing record's content, TTL or proxied setting differs from
+    what the container's labels produce, DockRoute **overwrites the record**
+    to match the labels on the next reconcile (unless the policy is
+    `create-only`).
+</Callout>
+
+This only applies to DNS records (A/AAAA/CNAME). A tunnel ingress hostname
+always follows the default path above — DockRoute only treats a tunnel
+hostname as its own once a CNAME for it already points at its own
+`<tunnel-id>.cfargotunnel.com`, which a TXT record alone can't establish.
+
+1. In Cloudflare, create a TXT record named `_dockroute-<type>.<hostname>`
+   (lowercased type — `_dockroute-a.app.example.com` for an `A` record;
+   replace `_dockroute-` with your `DOCKROUTE_TXT_PREFIX` if you set one)
+   with content `heritage=dockroute,dockroute/owner=default` (replace
+   `default` with your `DOCKROUTE_OWNER_ID` if you set one).
+2. Deploy the container with its DockRoute labels. The existing record now
+   reads as owned, so DockRoute reconciles it in place — no gap.
+3. Once the record matches what you expect, switch back to `sync` if you
+   changed the policy for the adoption.
+
+This is not the default recommendation — prefer the delete-and-recreate path
+above unless the downtime is genuinely unacceptable for that hostname.
