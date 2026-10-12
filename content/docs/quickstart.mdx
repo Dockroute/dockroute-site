@@ -4,6 +4,21 @@ description: Run DockRoute next to your services and watch it reconcile — dry 
 icon: Rocket
 ---
 
+## Requirements
+
+DockRoute runs on `linux/amd64` and `linux/arm64`. On x86-64, the Bun runtime
+needs a CPU that reports **SSE4.2** and **POPCNT** — true for every real CPU
+since roughly 2010, but not for a VM pinned to a generic model such as QEMU's
+`kvm64`/`qemu64`. arm64 is not affected.
+
+<Callout type="warn" title="dockroute: unsupported CPU, missing sse4_2 popcnt">
+  Without SSE4.2/POPCNT, Bun hangs at 100% CPU with no log output instead of
+  crashing — so the entrypoint checks `/proc/cpuinfo` before starting the app
+  and exits right away with this message instead. In a VM (Proxmox, libvirt,
+  generic QEMU), set the CPU type to `host` (or `x86-64-v2` or newer) and
+  restart the VM.
+</Callout>
+
 ## 1. Dry run — no credentials needed
 
 DockRoute defaults to the `log` provider, which runs the whole pipeline and
