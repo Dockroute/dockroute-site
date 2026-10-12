@@ -27,9 +27,10 @@ export function isIPv4(value: string): boolean {
  * against the original text would reject valid, differently-written
  * addresses that core accepts. */
 export function isIPv6(value: string): boolean {
+  if (value.includes("]")) return false;
   try {
-    new URL(`http://[${value}]`);
-    return true;
+    const url = new URL(`http://[${value}]`);
+    return url.pathname === "/" && !url.search && !url.hash;
   } catch {
     return false;
   }

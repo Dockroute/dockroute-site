@@ -58,6 +58,16 @@ describe("isIPv6", () => {
     expect(isIPv6("192.0.2.1")).toBe(false);
     expect(isIPv6("origin.example.com")).toBe(false);
   });
+
+  // A `]` in the input closes the bracket early, so the URL parser treats
+  // the remainder as path/query/fragment instead of failing to parse —
+  // these must not be accepted as IPv6 literals.
+  test("rejects values that close the bracket early with trailing path/query/fragment", () => {
+    expect(isIPv6("::1]/x")).toBe(false);
+    expect(isIPv6("::1]?a")).toBe(false);
+    expect(isIPv6("::1]#x")).toBe(false);
+    expect(isIPv6("2001:db8::1]/../evil")).toBe(false);
+  });
 });
 
 describe("isValidTarget with URL-normalized IPv6 forms", () => {
