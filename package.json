@@ -9,7 +9,8 @@
     "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "test": "bun test"
   },
   "dependencies": {
     "cnfast": "^0.1.0",
@@ -31,14 +32,15 @@
     "sharp": "^0.35.5"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.6.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "bun-types": "^1.4.3",
     "postcss": "^8.5.29",
     "tailwindcss": "^4.3.3",
-    "typescript": "^6.0.3",
-    "@biomejs/biome": "^2.5.15"
+    "typescript": "^6.0.3"
   }
 }
