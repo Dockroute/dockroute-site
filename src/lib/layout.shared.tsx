@@ -25,6 +25,11 @@ export function baseOptions(): BaseLayoutProps {
         active: "nested-url",
       },
       {
+        text: "Generator",
+        url: "/generator",
+        active: "nested-url",
+      },
+      {
         text: "Changelog",
         url: "/changelog",
         active: "nested-url",
