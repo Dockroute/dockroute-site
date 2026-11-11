@@ -1,3 +1,5 @@
+## [0.4.4](https://github.com/Dockroute/dockroute-site/compare/v0.4.3...v0.4.4) (2026-11-11)
+
 ## [0.4.3](https://github.com/Dockroute/dockroute-site/compare/v0.4.2...v0.4.3) (2026-10-14)
 
 ## [0.4.2](https://github.com/Dockroute/dockroute-site/compare/v0.4.1...v0.4.2) (2026-10-14)
