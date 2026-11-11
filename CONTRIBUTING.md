@@ -48,5 +48,5 @@ image build with a Trivy vulnerability scan.
 
 - Conventional-style prefixes appreciated: `feat:`, `fix:`, `docs:`,
   `chore:`.
-- Keep PRs focused; describe *why*, not just *what*.
+- Keep PRs focused; describe _why_, not just _what_.
 - UI changes: include before/after screenshots in light **and** dark mode.

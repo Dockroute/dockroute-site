@@ -37,18 +37,18 @@ glowing circuit lines, clouds, anchors, whales, and Kubernetes wheels.
 
 ## Color system
 
-| Token | Color | Primary use |
-| --- | --- | --- |
-| Deep Navy | `#102A43` | Brand color, headings, and dark backgrounds |
-| Harbor Navy | `#163B5C` | Elevated dark surfaces and cards |
+| Token       | Color     | Primary use                                       |
+| ----------- | --------- | ------------------------------------------------- |
+| Deep Navy   | `#102A43` | Brand color, headings, and dark backgrounds       |
+| Harbor Navy | `#163B5C` | Elevated dark surfaces and cards                  |
 | Harbor Teal | `#22A89A` | Routes, links, active states, and primary actions |
-| Deep Teal | `#147D76` | Teal hover states and accessible text |
-| Warm Coral | `#F26B5B` | Waypoints, highlights, and important actions |
-| Deep Coral | `#D95145` | Coral hover and pressed states |
-| Off White | `#F7F3E8` | Warm light background and mascot details |
-| Mist | `#E8F1F2` | Soft sections, borders, and code highlights |
-| Slate | `#61758A` | Secondary text |
-| Ink | `#081B2C` | Dark-mode page background |
+| Deep Teal   | `#147D76` | Teal hover states and accessible text             |
+| Warm Coral  | `#F26B5B` | Waypoints, highlights, and important actions      |
+| Deep Coral  | `#D95145` | Coral hover and pressed states                    |
+| Off White   | `#F7F3E8` | Warm light background and mascot details          |
+| Mist        | `#E8F1F2` | Soft sections, borders, and code highlights       |
+| Slate       | `#61758A` | Secondary text                                    |
+| Ink         | `#081B2C` | Dark-mode page background                         |
 
 ### Usage ratio
 

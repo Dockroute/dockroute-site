@@ -75,7 +75,9 @@ html {
 }
 
 html > body[data-scroll-locked] {
+  /* biome-ignore lint/complexity/noImportantStyles: react-remove-scroll injects these with !important, so only !important overrides them */
   margin-right: 0px !important;
+  /* biome-ignore lint/complexity/noImportantStyles: same react-remove-scroll override as above */
   --removed-body-scroll-bar-size: 0px !important;
 }
 
