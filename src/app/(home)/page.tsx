@@ -333,9 +333,11 @@ function RouteStory() {
                 />
               )}
               {i === 1 ? (
-                <img
+                <Image
                   src="/brand/dockroute-icon-128.png"
                   alt=""
+                  width={32}
+                  height={32}
                   aria-hidden
                   className="absolute top-0 -left-2 size-8 rounded-full border border-fd-border bg-offwhite p-0.5"
                 />
@@ -514,6 +516,7 @@ function ConfigExample() {
             {"\n      "}
             <Y k="DOCKROUTE_OWNER_ID" v="home-lab" />
             {"\n      "}
+            {/* biome-ignore lint/suspicious/noTemplateCurlyInString: literal Compose variable shown in the example, not a JS template */}
             <Y k="CLOUDFLARE_API_TOKEN" v={"${CLOUDFLARE_API_TOKEN}"} />
             {"\n    "}
             <Y k="volumes" />

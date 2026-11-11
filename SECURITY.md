@@ -9,7 +9,7 @@ rendered content, supply-chain issues in the image).
 
 Please **do not open a public issue** for security problems. Instead use
 GitHub's private vulnerability reporting
-(*Security → Report a vulnerability* on the repository), or email
+(_Security → Report a vulnerability_ on the repository), or email
 `danilo.dorgam@codeinloop.com.br`.
 
 You can expect an acknowledgement within a few days. Please include steps to

@@ -1,4 +1,5 @@
 ---
+
 name: dockroute-dev-practices
 description: Development best practices for the dockroute-site codebase (Next.js 16 + Fumadocs, Bun, Biome) — docs-must-match-code accountability, the shared-constants/route sync rule, the graceful-degradation pattern for external API calls at build time, and the brand/style conventions. Use this skill whenever writing or reviewing code or content in this repo — docs pages, routes, components, or config — even if the user doesn't mention "best practices" explicitly.
 ---
@@ -95,5 +96,5 @@ bun run build        # production build
 
 PR titles and commits follow Conventional Commits (`feat:`, `fix:`, `docs:`,
 `chore:`) — validated by the `pr-title` workflow. Keep PRs small and
-focused, describing *why* in the description. No direct pushes to `main`;
+focused, describing _why_ in the description. No direct pushes to `main`;
 everything lands via branch + PR, and dependency bumps come from Dependabot.
