@@ -9,9 +9,11 @@ import {
   POLICIES,
   RECORD_TYPES,
   validateHostname,
+  validateOwnerId,
   validateSeconds,
   validateTarget,
   validateTunnelService,
+  validateTxtPrefix,
 } from "@/lib/generator/validate";
 import { CodeBlock } from "./code-block";
 import { SelectField, TextField, ToggleField } from "./fields";
@@ -171,7 +173,8 @@ function BasicStep({
         label="Owner id"
         value={state.ownerId}
         onChange={(ownerId) => patch({ ownerId })}
-        help="DOCKROUTE_OWNER_ID — lets several DockRoute instances share a zone safely. Give every host a unique id."
+        error={validateOwnerId(state.ownerId)}
+        help="DOCKROUTE_OWNER_ID — lets several DockRoute instances share a zone safely. Give every host a unique id; no commas."
       />
       <SelectField
         label="Sync policy"
@@ -191,7 +194,8 @@ function BasicStep({
         label="TXT prefix"
         value={state.txtPrefix}
         onChange={(txtPrefix) => patch({ txtPrefix })}
-        help="DOCKROUTE_TXT_PREFIX — ownership TXT record name prefix."
+        error={validateTxtPrefix(state.txtPrefix)}
+        help="DOCKROUTE_TXT_PREFIX — ownership TXT record name prefix. Lower-case a-z, 0-9, _ and - only, at most 58 characters."
         monospace
       />
       <TextField

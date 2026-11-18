@@ -27,6 +27,14 @@ gets a companion TXT record:
 A record is *owned* only when its companion TXT exists, carries
 `heritage=dockroute` and matches this instance's `DOCKROUTE_OWNER_ID`.
 
+Both the owner id and the prefix must read back from that TXT unchanged, so
+DockRoute checks them at startup instead of discovering a mismatch later.
+Surrounding spaces are trimmed; an owner id with a comma is rejected, since it
+would split the TXT content; and the prefix must be one lower-case DNS label
+fragment (`a-z`, `0-9`, `_`, `-`, at most 58 characters), because providers
+return names in lower case and the prefix shares its label with the record
+type.
+
 ## The rules
 
 Enforced by a provider-agnostic planner, so every provider behaves the same:

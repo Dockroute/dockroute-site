@@ -4,6 +4,7 @@
     "cloudflare-dns",
     "cloudflare-tunnel",
     "multiple-instances",
+    "socket-proxy",
     "migrating-to-dockroute"
   ]
 }

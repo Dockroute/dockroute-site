@@ -39,6 +39,11 @@ of the zones DockRoute may look at, independent of what the token can reach.
 Entries are matched against **zone names** (`example.com`), not hostname
 suffixes.
 
+To keep the token out of the compose file and `docker inspect`, use
+`CLOUDFLARE_API_TOKEN_FILE` with a
+[Docker secret](/docs/configuration/environment#docker-secrets) instead of
+`CLOUDFLARE_API_TOKEN`.
+
 ## Label your services
 
 ```yaml

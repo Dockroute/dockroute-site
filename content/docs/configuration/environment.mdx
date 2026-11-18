@@ -11,20 +11,35 @@ config file and no database. The container is stateless and disposable.
 
 | Variable                   | Default                | Description                             |
 | -------------------------- | ---------------------- | --------------------------------------- |
+| `DOCKER_HOST`              | —                      | Docker Engine endpoint: `unix:///path` or `tcp://host:port` (plain HTTP, e.g. a [socket proxy](/docs/guides/socket-proxy)). Overrides `DOCKER_SOCK` |
 | `DOCKER_SOCK`              | `/var/run/docker.sock` | Docker Engine socket path               |
 | `DOCKROUTE_PROVIDER`       | `log`                  | `log` (dry-run) or `cloudflare`         |
 | `DOCKROUTE_DEFAULT_TARGET` | —                      | Fallback record target when `dockroute.target` is omitted |
 | `DOCKROUTE_RESYNC_SECONDS` | `60`                   | Interval of the periodic full reconcile |
+| `DOCKROUTE_HEARTBEAT_PATH` | `/tmp/dockroute-heartbeat` | Where the reconcile loop writes its liveness heartbeat — see [Health check](#health-check) |
+
+`DOCKER_HOST` is resolved the way the Docker CLI does it: it wins over
+`DOCKER_SOCK`, which wins over the standard socket. Only `unix://` and plain
+`tcp://host[:port]` (port `2375` by default) are supported. There is no TLS:
+`tcp://` is meant for a socket proxy on an internal network.
 
 ## Ownership and policy
 
 | Variable                  | Default       | Description                                               |
 | ------------------------- | ------------- | --------------------------------------------------------- |
-| `DOCKROUTE_OWNER_ID`      | `default`     | Ownership id — lets several instances share a zone safely |
+| `DOCKROUTE_OWNER_ID`      | `default`     | Ownership id — lets several instances share a zone safely. Surrounding spaces are trimmed; must not contain `,` |
 | `DOCKROUTE_POLICY`        | `sync`        | `sync`, `upsert-only` or `create-only` — see [Sync policies](/docs/configuration/policies) |
 | `DOCKROUTE_DELETE_GRACE_SECONDS` | `60`    | Seconds a record must stay gone before it is deleted — `0` deletes at once |
-| `DOCKROUTE_TXT_PREFIX`    | `_dockroute-` | Ownership TXT name prefix                                 |
+| `DOCKROUTE_TXT_PREFIX`    | `_dockroute-` | Ownership TXT name prefix. Lower-case `a-z`, `0-9`, `_` and `-` only (no dots), at most 58 characters |
 | `DOCKROUTE_DOMAIN_FILTER` | —             | Comma-separated zone allowlist — entries are matched against provider **zone names**, not hostname suffixes |
+
+The owner id and the TXT prefix are written into every
+[ownership TXT](/docs/concepts/safety-model#the-ownership-txt) and must read
+back unchanged, or DockRoute would treat its own records as foreign. That is
+why both are trimmed, and why a comma in the owner id (it splits the TXT
+content) or a prefix with a dot, an upper-case letter or more than 58
+characters (it must fit in one lower-case DNS label next to the record type)
+stops the container at startup.
 
 <Callout title="Set a distinct owner id per instance">
   If two DockRoute instances ever share a zone with the same
@@ -41,16 +56,86 @@ config file and no database. The container is stateless and disposable.
 | `CLOUDFLARE_ACCOUNT_ID` | Required for tunnel publishing                                        |
 | `CLOUDFLARE_TUNNEL_ID`  | Required for tunnel publishing (an existing tunnel — you run `cloudflared`) |
 
-<Callout title="Fatal at startup">
-  Some misconfigurations stop the container immediately instead of degrading
-  silently: `DOCKROUTE_PROVIDER=cloudflare` without `CLOUDFLARE_API_TOKEN`, an
-  invalid `DOCKROUTE_POLICY`, and a `DOCKROUTE_RESYNC_SECONDS` or
-  `DOCKROUTE_DELETE_GRACE_SECONDS` that is not a number in range. A blank value
-  is not an error — it means "unset" and falls back to the default, so clearing
-  an optional field in Portainer or Unraid is safe. The container also refuses
-  to start on an x86-64 CPU missing SSSE3/SSE4.1/SSE4.2/POPCNT — see
-  [CPU requirements](/docs/quickstart#requirements).
-</Callout>
+Each of them can also be read from a file — see
+[Docker secrets](#docker-secrets).
+
+### Docker secrets
+
+Set `<name>_FILE` instead of `<name>` to read `CLOUDFLARE_API_TOKEN`,
+`CLOUDFLARE_ACCOUNT_ID` or `CLOUDFLARE_TUNNEL_ID` from a file, typically a
+[Docker secret](https://docs.docker.com/compose/how-tos/use-secrets/) mounted
+under `/run/secrets/`. The token then stays out of the compose file and out of
+`docker inspect`. Surrounding whitespace, such as a trailing newline, is
+trimmed.
+
+```yaml title="compose.yaml"
+services:
+  dockroute:
+    image: ghcr.io/dockroute/dockroute:latest
+    environment:
+      DOCKROUTE_PROVIDER: cloudflare
+      DOCKROUTE_OWNER_ID: home-lab
+      CLOUDFLARE_API_TOKEN_FILE: /run/secrets/cloudflare_api_token
+    secrets:
+      - cloudflare_api_token
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+secrets:
+  cloudflare_api_token:
+    file: ./cloudflare_api_token.txt
+```
+
+DockRoute reads the file after dropping root, as the image's `bun` user, so
+that user must be able to read it. Swarm secrets are world-readable by default;
+with Compose's file-based secrets the host file's own permissions apply.
+
+## Fatal at startup
+
+Some misconfigurations stop the container immediately instead of degrading
+silently:
+
+- `DOCKROUTE_PROVIDER=cloudflare` without `CLOUDFLARE_API_TOKEN` (or
+  `CLOUDFLARE_API_TOKEN_FILE`).
+- An invalid `DOCKROUTE_POLICY`, or a `DOCKROUTE_RESYNC_SECONDS` or
+  `DOCKROUTE_DELETE_GRACE_SECONDS` that is not a number in range.
+- A `DOCKER_HOST` that is not `unix:///path` or `tcp://host[:port]` — including
+  one with credentials, a query or a path, which are rejected rather than
+  silently dropped.
+- A `DOCKROUTE_OWNER_ID` with a comma, or a `DOCKROUTE_TXT_PREFIX` outside the
+  rules [above](#ownership-and-policy).
+- A variable set together with its `_FILE` variant, or a `_FILE` that points
+  at a missing, unreadable or empty file. The error names the variable and the
+  path, never the secret.
+
+A blank value is not an error — it means "unset" and falls back to the
+default, so clearing an optional field in Portainer or Unraid is safe. The
+container also refuses to start on an x86-64 CPU missing
+SSSE3/SSE4.1/SSE4.2/POPCNT — see [CPU requirements](/docs/quickstart#requirements).
+
+## Health check
+
+The image ships a Docker `HEALTHCHECK`: every successful reconcile touches the
+heartbeat file at `DOCKROUTE_HEARTBEAT_PATH`, and the check fails once it is
+older than `3 × DOCKROUTE_RESYNC_SECONDS` (at least 90 seconds). So
+`docker ps`, `docker inspect` and orchestrators that watch container health
+report `unhealthy` when the Docker socket becomes unreachable or the provider
+keeps failing to sync — not only when the process crashes.
+
+No configuration is needed: Compose, CasaOS, Arcane, Portainer and Runtipi
+pick it up from the image. Add your own `healthcheck:` block only to change the
+thresholds:
+
+```yaml title="compose.yaml"
+services:
+  dockroute:
+    image: ghcr.io/dockroute/dockroute:latest
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+```
 
 ## Example
 
