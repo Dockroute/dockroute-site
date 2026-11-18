@@ -15,6 +15,10 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # fumadocs-mdx pins a minimum fumadocs-core, so bumping one without the
+      # other breaks `bun install` (postinstall runs fumadocs-mdx).
+      fumadocs:
+        patterns: ["fumadocs-*"]
       dev-dependencies:
         dependency-type: development
     commit-message:
