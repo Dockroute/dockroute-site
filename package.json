@@ -13,8 +13,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "cnfast": "^0.1.0",
-    "fumadocs-core": "16.18.4",
+    "cnfast": "^0.2.0",
+    "fumadocs-core": "16.19.3",
     "fumadocs-mdx": "15.6.2",
     "fumadocs-ui": "npm:@fumadocs/base-ui@16.13.0",
     "lucide-react": "^1.73.0",
