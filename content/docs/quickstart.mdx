@@ -66,6 +66,13 @@ You should see the desired state logged: an `A` record for
   (`stat -c '%g' /var/run/docker.sock`).
 </Callout>
 
+<Callout title="Lock the Docker API down">
+  `:ro` does not make the Docker API read-only. DockRoute only needs three
+  `GET` endpoints; to enforce that, put a
+  [socket proxy](/docs/guides/socket-proxy) in front of the socket and point
+  `DOCKER_HOST` at it.
+</Callout>
+
 ## 2. Go live with Cloudflare
 
 Switch the provider and add a token with **Zone → Zone → Read** and
@@ -82,6 +89,10 @@ Switch the provider and add a token with **Zone → Zone → Read** and
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 ```
+
+Rather not keep the token in an environment variable? Set
+`CLOUDFLARE_API_TOKEN_FILE` to a [Docker secret](/docs/configuration/environment#docker-secrets)
+instead.
 
 Restart the stack. DockRoute lists your running containers, computes the
 desired records and reconciles them. From now on, every container `start` and
