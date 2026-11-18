@@ -15,6 +15,13 @@ updates:
     schedule:
       interval: weekly
     groups:
+      # One weekly PR for runtime minor/patch bumps instead of one per package.
+      # This also keeps fumadocs-core and fumadocs-mdx in step: fumadocs-mdx
+      # pins a minimum fumadocs-core, and bumping it alone breaks `bun install`
+      # (postinstall runs fumadocs-mdx). Majors still get their own PRs.
+      production-dependencies:
+        dependency-type: production
+        update-types: ["minor", "patch"]
       dev-dependencies:
         dependency-type: development
     commit-message:
