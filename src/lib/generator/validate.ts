@@ -12,6 +12,10 @@ export type RecordType = (typeof RECORD_TYPES)[number];
 
 const TUNNEL_SERVICE_SCHEMES = ["http:", "https:", "tcp:", "ssh:"];
 
+/** The TXT prefix and the longest record type ("cname") share one
+ * 63-character DNS label. */
+const MAX_TXT_PREFIX_LENGTH = 63 - "cname".length;
+
 const IPV4_RE =
   /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
 
@@ -83,6 +87,30 @@ export function validateSeconds(raw: string, min: number): string | undefined {
   const value = Number(raw);
   if (!Number.isFinite(value) || value < min) {
     return `Must be a number of seconds >= ${min} (blank uses the default).`;
+  }
+  return undefined;
+}
+
+/** Mirrors core's ownerIdFromEnv in src/config.ts — blank means "default",
+ * surrounding spaces are trimmed, and a comma would split the ownership TXT
+ * so the container could no longer recognize its own records. */
+export function validateOwnerId(raw: string): string | undefined {
+  if (raw.trim().includes(",")) {
+    return 'Must not contain a comma (",") — it splits the ownership TXT record.';
+  }
+  return undefined;
+}
+
+/** Mirrors core's txtPrefixFromEnv in src/config.ts: one lower-case DNS label
+ * fragment, short enough to share that label with the record type. */
+export function validateTxtPrefix(raw: string): string | undefined {
+  const prefix = raw.trim();
+  if (!prefix) return undefined;
+  if (!/^[a-z0-9_-]+$/.test(prefix)) {
+    return 'Allowed characters: a-z, 0-9, "_" and "-" (lower case, no dots).';
+  }
+  if (prefix.length > MAX_TXT_PREFIX_LENGTH) {
+    return `At most ${MAX_TXT_PREFIX_LENGTH} characters, so it fits in one DNS label with the record type.`;
   }
   return undefined;
 }

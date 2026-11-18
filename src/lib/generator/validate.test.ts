@@ -5,9 +5,11 @@ import {
   isValidTarget,
   isValidTunnelServiceUrl,
   validateHostname,
+  validateOwnerId,
   validateSeconds,
   validateTarget,
   validateTunnelService,
+  validateTxtPrefix,
 } from "./validate";
 
 // Target cases mirrored from Dockroute/Dockroute's src/core/labels.test.ts
@@ -141,5 +143,60 @@ describe("isValidTunnelServiceUrl / validateTunnelService", () => {
     expect(validateTunnelService("")).toBeDefined();
     expect(validateTunnelService("whoami:80")).toBeDefined();
     expect(validateTunnelService("http://whoami:80")).toBeUndefined();
+  });
+});
+
+// Mirrors core's ownerIdFromEnv / txtPrefixFromEnv in src/config.ts: both
+// values are trimmed, and only what cannot round-trip through the ownership
+// TXT is rejected.
+describe("validateOwnerId", () => {
+  test("blank is valid — the container uses the default", () => {
+    expect(validateOwnerId("")).toBeUndefined();
+    expect(validateOwnerId("   ")).toBeUndefined();
+  });
+
+  test("accepts the ids the container accepts", () => {
+    for (const ownerId of [
+      "home-lab",
+      "edge-1",
+      "a=b",
+      "my host",
+      "Home-Lab",
+      " prod ",
+    ]) {
+      expect(validateOwnerId(ownerId)).toBeUndefined();
+    }
+  });
+
+  test("rejects a comma, which splits the ownership TXT", () => {
+    expect(validateOwnerId("a,b")).toMatch(/comma/);
+  });
+});
+
+describe("validateTxtPrefix", () => {
+  test("blank is valid — the container uses the default", () => {
+    expect(validateTxtPrefix("")).toBeUndefined();
+  });
+
+  test("accepts one lower-case DNS label fragment, trimmed", () => {
+    for (const prefix of [
+      "_dockroute-",
+      "_dr-",
+      "dr_1-",
+      " _dr- ",
+      "a".repeat(58),
+    ]) {
+      expect(validateTxtPrefix(prefix)).toBeUndefined();
+    }
+  });
+
+  test("rejects dots, upper case and other characters", () => {
+    for (const prefix of ["_dr.", "_DR-", "dock route", "_dr/", "_dr#"]) {
+      expect(validateTxtPrefix(prefix)).toMatch(/a-z, 0-9/);
+    }
+  });
+
+  test("rejects a prefix too long to share one DNS label with the record type", () => {
+    expect(validateTxtPrefix("a".repeat(59))).toMatch(/58 characters/);
   });
 });
